@@ -16,7 +16,8 @@ Website and dispatch desk for RINAMAS Equipment and Trading Enterprise, a heavy-
 ```bash
 cp .env.example .env     # then set ADMIN_PASSWORD and SESSION_SECRET
 npm install
-npm run db:push          # creates prisma/dev.db (SQLite)
+createdb rinamas         # local Postgres (brew install postgresql@17 && brew services start postgresql@17)
+npm run db:push          # creates the tables
 npm run db:seed          # loads the 12 machine classes
 npm run dev              # http://localhost:3000
 ```
@@ -25,11 +26,11 @@ Admin: http://localhost:3000/admin. The seed creates two accounts from `.env`: `
 
 ## Deploy
 
-Works on any Node host (Vercel, Railway, Render, a VPS). Set the env vars from `.env.example`. For production use Postgres: change `provider = "sqlite"` to `"postgresql"` in `prisma/schema.prisma`, set `DATABASE_URL`, then run `npx prisma db push` and `npm run db:seed` once.
+Works on any Node host (Vercel, Railway, Render, a VPS). Set the env vars from `.env.example`. Point `DATABASE_URL` at a managed Postgres, then run `npx prisma db push` and `npm run db:seed` once. Production lives on Vercel at rinamas.com (domain registered at Hostinger, DNS points at Vercel).
 
 ## Stack
 
-Next.js 15 (App Router, server actions), React 19, Prisma 6, SQLite locally / Postgres in production, Zod validation. No CSS framework: design tokens live in `src/app/globals.css`.
+Next.js 15 (App Router, server actions), React 19, Prisma 6 on Postgres, Zod validation. No CSS framework: design tokens live in `src/app/globals.css`.
 
 ## Roles
 

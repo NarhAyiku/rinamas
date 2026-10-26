@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { DISPATCH_PHONE } from "@/lib/contact";
 
 type Opt = { id: string; name: string };
 
@@ -21,7 +22,7 @@ export function QuoteForm({ machines }: { machines: Opt[] }) {
       if (!res.ok) { setError(data.error ?? "Something went wrong. Please try again or call dispatch."); setBusy(false); return; }
       router.push(`/quote/${data.id}`);
     } catch {
-      setError("Could not reach the server. Check your connection or call 024 351 8749.");
+      setError(`Could not reach the server. Check your connection or call ${DISPATCH_PHONE.display}.`);
       setBusy(false);
     }
   }

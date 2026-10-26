@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { DISPATCH_PHONE } from "@/lib/contact";
 
 const LINKS = [["/#fleet", "Fleet"], ["/#rates", "Rates"], ["/#how", "How it works"], ["/#coverage", "Coverage"], ["/#faq", "FAQ"]];
 
@@ -22,7 +23,7 @@ export function MobileNav() {
         </nav>
         <div className="mobile-menu-cta">
           <a className="btn btn-accent" href="/#quote" onClick={() => setOpen(false)}>Request a quote</a>
-          <a className="btn btn-ghost" href="tel:+233243518749">Call 024 351 8749</a>
+          <a className="btn btn-ghost" href={`tel:${DISPATCH_PHONE.tel}`}>Call {DISPATCH_PHONE.display}</a>
         </div>
       </div>
     </>

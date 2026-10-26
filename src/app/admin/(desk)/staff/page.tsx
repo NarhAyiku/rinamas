@@ -1,15 +1,13 @@
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { requireSuper } from "@/lib/auth";
 import { fmtDate } from "@/lib/format";
-import { setStaffActive } from "../actions";
+import { setStaffActive } from "@/app/admin/actions";
 import { StaffForms } from "./forms";
 
 export const dynamic = "force-dynamic";
 
 export default async function StaffPage() {
-  const session = await getSession();
-  if (session?.role !== "superadmin") redirect("/admin?denied=1");
+  const session = await requireSuper();
   const staff = await prisma.staff.findMany({ orderBy: [{ role: "desc" }, { createdAt: "asc" }], include: { _count: { select: { activities: true } } } });
   return (
     <>

@@ -1,8 +1,7 @@
 import { prisma } from "@/lib/db";
 import { ALL_STATUSES, STATUS_LABEL, fmtDate, ghs, intl, waLink } from "@/lib/format";
 import { getSession } from "@/lib/auth";
-import { StatusPill } from "@/components/StatusBits";
-import { updateQuote } from "./actions";
+import { QuoteStatusForm, StatusPill } from "@/components/StatusBits";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +12,9 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
     ...(status && (ALL_STATUSES as readonly string[]).includes(status) ? { status } : {}),
     ...(q ? { OR: [{ reference: { contains: q } }, { name: { contains: q } }, { phone: { contains: q } }, { site: { contains: q } }, { machineName: { contains: q } }] } : {}),
   };
-  const [quotes, counts, onHire] = await Promise.all([
+  const [quotes, counts] = await Promise.all([
     prisma.quoteRequest.findMany({ where, orderBy: { createdAt: "desc" }, take: 200 }),
     prisma.quoteRequest.groupBy({ by: ["status"], _count: { _all: true } }),
-    prisma.quoteRequest.count({ where: { status: "on_hire" } }),
   ]);
   const count = (s: string) => counts.find((c) => c.status === s)?._count._all ?? 0;
   const total = counts.reduce((a, c) => a + c._count._all, 0);
@@ -37,7 +35,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
         <a className={`tile tile-new ${status === "new" ? "is-active" : ""}`} href="/admin?status=new"><b>{count("new")}</b><span>New, awaiting quote</span></a>
         <a className={`tile tile-quoted ${status === "quoted" ? "is-active" : ""}`} href="/admin?status=quoted"><b>{count("quoted")}</b><span>Quoted, awaiting deposit</span></a>
         <a className={`tile tile-confirmed ${status === "confirmed" ? "is-active" : ""}`} href="/admin?status=confirmed"><b>{count("confirmed")}</b><span>Confirmed, to dispatch</span></a>
-        <a className={`tile tile-on_hire ${status === "on_hire" ? "is-active" : ""}`} href="/admin?status=on_hire"><b>{onHire}</b><span>On hire now</span></a>
+        <a className={`tile tile-on_hire ${status === "on_hire" ? "is-active" : ""}`} href="/admin?status=on_hire"><b>{count("on_hire")}</b><span>On hire now</span></a>
       </div>
 
       <div className="segmented" role="tablist" aria-label="Filter by status">
@@ -81,14 +79,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
                 </div>
                 {qr.notes && <span className="muted note">“{qr.notes}”</span>}
               </div>
-              <form action={updateQuote} className="req-act">
-                <input type="hidden" name="id" value={qr.id} />
-                <label className="f">Status
-                  <select name="status" defaultValue={qr.status}>{ALL_STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}</select>
-                </label>
-                <label className="f">Internal note<input name="adminNote" defaultValue={qr.adminNote ?? ""} placeholder="e.g. quoted GH₵ 9,200, awaiting MoMo" /></label>
-                <button className="btn btn-accent btn-sm" type="submit">Save</button>
-              </form>
+              <QuoteStatusForm id={qr.id} status={qr.status} adminNote={qr.adminNote} className="req-act" notePlaceholder="e.g. quoted GH₵ 9,200, awaiting MoMo" />
             </article>
           );
         })}

@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { STATUSES, STATUS_HINT, STATUS_LABEL, ghs, waLink } from "@/lib/format";
+import { ghs, waLink } from "@/lib/format";
+import { whatsappNumber } from "@/lib/contact";
+import { Timeline } from "@/components/StatusBits";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CopyButton } from "@/components/CopyButton";
@@ -12,7 +14,6 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const q = await prisma.quoteRequest.findUnique({ where: { id }, include: { hourLogs: true } });
   if (!q) notFound();
-  const stepIdx = STATUSES.indexOf(q.status as (typeof STATUSES)[number]);
   const hours = q.hourLogs.reduce((a, l) => a + l.hours, 0);
 
   const msg = [
@@ -25,7 +26,7 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
     `Name: ${q.name} · Phone: ${q.phone}`,
     q.notes ? `Notes: ${q.notes}` : null,
   ].filter(Boolean).join("\n");
-  const wa = waLink(process.env.WHATSAPP_NUMBER ?? "233243518749", msg);
+  const wa = waLink(whatsappNumber(), msg);
 
   return (
     <>
@@ -35,9 +36,7 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
           <p className="eyebrow">{q.status === "new" ? "Request received" : "Your hire"}</p>
           <h2 style={{ marginTop: ".5rem" }}>{q.status === "new" ? "Dispatch has your job" : q.status === "on_hire" ? "Your machine is on site" : q.status === "closed" ? "Hire complete" : q.status === "lost" ? "Request closed" : "In progress"}</h2>
           <p className="lede" style={{ marginTop: ".8rem" }}>Keep this page: it is your job's record with RINAMAS and updates as dispatch works it. We reply with a written quote within the working day, Mon to Sat. For a faster answer, send the details to dispatch on WhatsApp with one tap.</p>
-          <ol className="timeline" aria-label="Hire progress" style={{ marginTop: "1.4rem" }}>
-            {STATUSES.map((s, i) => <li key={s} className={i < stepIdx ? "done" : i === stepIdx ? "now" : ""}><b>{STATUS_LABEL[s]}</b><span>{STATUS_HINT[s]}</span></li>)}
-          </ol>
+          <Timeline status={q.status} style={{ marginTop: "1.4rem" }} />
           <div className="panel" style={{ marginTop: "1.6rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
               <span className="ref">{q.reference}</span>

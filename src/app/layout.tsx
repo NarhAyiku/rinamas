@@ -12,6 +12,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#23262A", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
+// Runs before paint: saved choice wins, otherwise the system setting.
+const THEME_BOOT = `(function(){try{var t=localStorage.getItem("theme");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";document.documentElement.dataset.theme=t}catch(e){}})()`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-GH">
@@ -23,7 +26,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Barlow:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap"
         />
       </head>
-      <body>{children}<SwRegister /></body>
+      <body>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+        {children}<SwRegister />
+      </body>
     </html>
   );
 }

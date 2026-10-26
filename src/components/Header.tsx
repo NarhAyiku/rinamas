@@ -1,5 +1,7 @@
 import { Brand, BadgeDefs } from "./Badge";
 import { MobileNav } from "./MobileNav";
+import { DISPATCH_PHONE } from "@/lib/contact";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function Header() {
   return (
@@ -16,8 +18,9 @@ export function Header() {
             <a href="/#faq">FAQ</a>
           </nav>
           <div className="top-actions">
-            <a className="btn btn-ghost btn-sm top-call" href="tel:+233243518749">024 351 8749</a>
+            <a className="btn btn-ghost btn-sm top-call" href={`tel:${DISPATCH_PHONE.tel}`}>{DISPATCH_PHONE.display}</a>
             <a className="btn btn-accent btn-sm" href="/#quote">Request a quote</a>
+            <ThemeToggle />
             <MobileNav />
           </div>
         </div>

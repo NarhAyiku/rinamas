@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
-import { ghs } from "@/lib/format";
+import { ghs, waLink } from "@/lib/format";
+import { DISPATCH_PHONE, MAPS_URL, OFFICE_PHONE, WA_GREETING, whatsappNumber } from "@/lib/contact";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Fleet } from "@/components/Fleet";
@@ -18,6 +19,7 @@ const REGIONS: [string, string][] = [
 
 export default async function Home() {
   const machines = await prisma.machine.findMany({ orderBy: { sortOrder: "asc" } });
+  const wa = whatsappNumber();
   const week = (d: number) => ghs(d * 6 * 0.9);
   const month = (d: number) => ghs(d * 26 * 0.8);
 
@@ -119,9 +121,9 @@ export default async function Home() {
             <div className="depot">
               <h3>The yard</h3>
               <dl>
-                <dt>Address</dt><dd>RINAMAS Equipment and Trading Enterprise<br />Off N1 Highway, George Walker Bush Motorway<br />Accra, Ghana<br /><a className="maplink" href="https://www.google.com/maps/search/?api=1&query=George+Walker+Bush+Motorway+N1+Highway+Accra" target="_blank" rel="noopener">Open in Google Maps ↗</a></dd>
+                <dt>Address</dt><dd>RINAMAS Equipment and Trading Enterprise<br />Off N1 Highway, George Walker Bush Motorway<br />Accra, Ghana<br /><a className="maplink" href={MAPS_URL} target="_blank" rel="noopener">Open in Google Maps ↗</a></dd>
                 <dt>CEO</dt><dd>Narh Richard Mashie</dd>
-                <dt>Phone</dt><dd><a href="tel:+233243518749">+233 (0)24 351 8749</a><br /><a href="tel:+233249276713">+233 (0)24 927 6713</a></dd>
+                <dt>Phone</dt><dd><a href={`tel:${DISPATCH_PHONE.tel}`}>+233 (0)24 351 8749</a><br /><a href={`tel:${OFFICE_PHONE.tel}`}>+233 (0)24 927 6713</a></dd>
                 <dt>Hours</dt><dd>Mon–Sat, 06:00–18:00 GMT. Dispatch line answers Sundays for machines already on hire.</dd>
               </dl>
             </div>
@@ -136,9 +138,9 @@ export default async function Home() {
             <h2 style={{ marginTop: ".5rem" }}>Get a quote today</h2>
             <p className="lede">Send the form and dispatch gets your request straight away, with a reference number and a one-tap WhatsApp follow-up. Or reach us directly on the numbers here.</p>
             <div className="contact">
-              <div className="contact-row"><span className="lbl">WhatsApp</span><a className="code" href="https://wa.me/233243518749?text=Hello%20RINAMAS%20dispatch%2C%20I%20need%20a%20machine." target="_blank" rel="noopener">024 351 8749</a><CopyButton text="+233243518749" /></div>
-              <div className="contact-row"><span className="lbl">Call</span><a className="code" href="tel:+233249276713">024 927 6713</a><CopyButton text="+233249276713" /></div>
-              <div className="contact-row"><span className="lbl">Yard</span><a className="code" href="https://www.google.com/maps/search/?api=1&query=George+Walker+Bush+Motorway+N1+Highway+Accra" target="_blank" rel="noopener">Off N1 Highway, George Walker Bush Motorway, Accra ↗</a></div>
+              <div className="contact-row"><span className="lbl">WhatsApp</span><a className="code" href={waLink(wa, WA_GREETING)} target="_blank" rel="noopener">{DISPATCH_PHONE.display}</a><CopyButton text={DISPATCH_PHONE.tel} /></div>
+              <div className="contact-row"><span className="lbl">Call</span><a className="code" href={`tel:${OFFICE_PHONE.tel}`}>{OFFICE_PHONE.display}</a><CopyButton text={OFFICE_PHONE.tel} /></div>
+              <div className="contact-row"><span className="lbl">Yard</span><a className="code" href={MAPS_URL} target="_blank" rel="noopener">Off N1 Highway, George Walker Bush Motorway, Accra ↗</a></div>
             </div>
           </div>
           <QuoteForm machines={machines.map((m) => ({ id: m.id, name: m.name }))} />
@@ -159,7 +161,7 @@ export default async function Home() {
         </div>
       </section>
       <Footer />
-      <StickyBar wa={process.env.WHATSAPP_NUMBER ?? "233243518749"} />
+      <StickyBar wa={wa} />
     </>
   );
 }

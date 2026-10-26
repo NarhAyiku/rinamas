@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
+import { DISPATCH_PHONE, WA_GREETING } from "@/lib/contact";
+import { waLink } from "@/lib/format";
 
 /** Two-action bar on phones: reach dispatch now, or request a quote. Appears once the hero scrolls off. */
 export function StickyBar({ wa }: { wa: string }) {
@@ -21,8 +23,8 @@ export function StickyBar({ wa }: { wa: string }) {
   }, []);
   return (
     <div className={`stickybar ${show ? "show" : ""}`} aria-hidden={!show}>
-      <a className="btn btn-wa" href={`https://wa.me/${wa}?text=${encodeURIComponent("Hello RINAMAS dispatch, I need a machine.")}`} target="_blank" rel="noopener">WhatsApp</a>
-      <a className="btn btn-ghost" href="tel:+233243518749">Call</a>
+      <a className="btn btn-wa" href={waLink(wa, WA_GREETING)} target="_blank" rel="noopener">WhatsApp</a>
+      <a className="btn btn-ghost" href={`tel:${DISPATCH_PHONE.tel}`}>Call</a>
       <a className="btn btn-accent" href="/#quote">Get a quote</a>
     </div>
   );

@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { requireSuper } from "@/lib/auth";
 import { fmtDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -8,8 +7,7 @@ export const dynamic = "force-dynamic";
 const GROUPS: Record<string, string> = { "auth.": "Sign-ins", "quote.": "Requests & hires", "hourlog.": "Hour logs", "machine.": "Fleet", "staff.": "Staff" };
 
 export default async function ActivityPage({ searchParams }: { searchParams: Promise<{ staff?: string; type?: string }> }) {
-  const session = await getSession();
-  if (session?.role !== "superadmin") redirect("/admin?denied=1");
+  const session = await requireSuper();
   const { staff, type } = await searchParams;
   const where = { ...(staff ? { staffId: staff } : {}), ...(type ? { action: { startsWith: type } } : {}) };
   const [rows, people] = await Promise.all([

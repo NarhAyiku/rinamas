@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { ALL_STATUSES, STATUS_HINT, STATUS_LABEL, STATUSES, fmtDate, ghs, intl, waLink } from "@/lib/format";
+import { fmtDate, ghs, intl, waLink } from "@/lib/format";
 import { getSession } from "@/lib/auth";
-import { StatusPill } from "@/components/StatusBits";
-import { addHourLog, deleteHourLog, saveHire, updateQuote } from "../../actions";
+import { QuoteStatusForm, StatusPill, Timeline } from "@/components/StatusBits";
+import { addHourLog, deleteHourLog, saveHire } from "@/app/admin/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,6 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
   const activity = session?.role === "superadmin" ? await prisma.activityLog.findMany({ where: { targetType: "quote", targetId: id }, orderBy: { createdAt: "desc" }, take: 30 }) : [];
   const hours = q.hourLogs.reduce((a, l) => a + l.hours, 0), standby = q.hourLogs.reduce((a, l) => a + l.standby, 0), fuel = q.hourLogs.reduce((a, l) => a + l.fuelL, 0);
   const meterRun = q.dispatchMeter != null && q.returnMeter != null ? q.returnMeter - q.dispatchMeter : null;
-  const stepIdx = STATUSES.indexOf(q.status as (typeof STATUSES)[number]);
   const msg = `Hello ${q.name}, RINAMAS dispatch here regarding your request ${q.reference} for ${q.machineName}.`;
 
   return (
@@ -34,12 +33,7 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
-      <ol className="timeline" aria-label="Hire progress">
-        {STATUSES.map((s, i) => (
-          <li key={s} className={i < stepIdx ? "done" : i === stepIdx ? "now" : ""}><b>{STATUS_LABEL[s]}</b><span>{STATUS_HINT[s]}</span></li>
-        ))}
-        {q.status === "lost" && <li className="lost"><b>Lost</b><span>{STATUS_HINT.lost}</span></li>}
-      </ol>
+      <Timeline status={q.status} />
 
       <div className="grid-2">
         <section className="panel">
@@ -52,12 +46,7 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
             <dt>Terms</dt><dd>{q.operator === "with" ? "Wet hire, operator supplied" : "Dry hire, customer's operator"} · {q.fuel === "with" ? "Fuel by RINAMAS, billed on hours" : "Customer buys fuel, full-to-full"}</dd>
             {q.notes && <><dt>Customer notes</dt><dd>“{q.notes}”</dd></>}
           </dl>
-          <form action={updateQuote} className="row-form" style={{ marginTop: "1rem" }}>
-            <input type="hidden" name="id" value={q.id} />
-            <label className="f">Status<select name="status" defaultValue={q.status}>{ALL_STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}</select></label>
-            <label className="f" style={{ flex: 1 }}>Internal note<input name="adminNote" defaultValue={q.adminNote ?? ""} /></label>
-            <button className="btn btn-accent btn-sm" type="submit">Save</button>
-          </form>
+          <QuoteStatusForm id={q.id} status={q.status} adminNote={q.adminNote} className="row-form" style={{ marginTop: "1rem" }} />
         </section>
 
         <form action={saveHire} className="panel" style={{ display: "grid", gap: ".9rem", alignContent: "start" }}>

@@ -3,21 +3,12 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { clearSessionCookie, getSession, setSessionCookie, type Session } from "@/lib/auth";
+import { clearSessionCookie, getSession, requireSession, requireSuper, setSessionCookie, type Session } from "@/lib/auth";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { logActivity } from "@/lib/activity";
 import { ALL_STATUSES, STATUS_LABEL, ghs } from "@/lib/format";
+import { storePhoto } from "@/lib/upload";
 
-async function guard(): Promise<Session> {
-  const s = await getSession();
-  if (!s) redirect("/admin/login");
-  return s;
-}
-async function guardSuper(): Promise<Session> {
-  const s = await guard();
-  if (s.role !== "superadmin") redirect("/admin?denied=1");
-  return s;
-}
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const num = (fd: FormData, k: string) => { const v = str(fd, k); return v === "" ? null : Number(v); };
 
@@ -47,7 +38,7 @@ export async function logout() {
 
 /* ---------- quote requests ---------- */
 export async function updateQuote(fd: FormData) {
-  const s = await guard();
+  const s = await requireSession();
   const id = str(fd, "id");
   const status = str(fd, "status");
   const adminNote = str(fd, "adminNote") || null;
@@ -78,7 +69,7 @@ const hireSchema = z.object({
 });
 
 export async function saveHire(fd: FormData) {
-  const s = await guard();
+  const s = await requireSession();
   const id = str(fd, "id");
   const parsed = hireSchema.safeParse({
     quotedAmount: num(fd, "quotedAmount"), depositAmount: num(fd, "depositAmount"),
@@ -103,7 +94,7 @@ export async function saveHire(fd: FormData) {
 }
 
 export async function addHourLog(fd: FormData) {
-  const s = await guard();
+  const s = await requireSession();
   const quoteId = str(fd, "quoteId");
   const date = str(fd, "date");
   const hours = Number(str(fd, "hours") || 0), standby = Number(str(fd, "standby") || 0), fuelL = Number(str(fd, "fuelL") || 0);
@@ -116,7 +107,7 @@ export async function addHourLog(fd: FormData) {
 }
 
 export async function deleteHourLog(fd: FormData) {
-  const s = await guard();
+  const s = await requireSession();
   const id = str(fd, "id");
   const log = await prisma.hourLog.findUnique({ where: { id }, include: { quote: true } });
   if (!log) return;
@@ -132,7 +123,7 @@ const machineSchema = z.object({
   name: z.string().trim().min(2),
   category: z.enum(["earth", "haul", "road", "lift"]),
   categoryLabel: z.string().trim().min(2),
-  image: z.string().trim().min(1),
+  image: z.string().trim(),
   specs: z.string().trim(),
   dayRate: z.coerce.number().int().min(0),
   rateUnit: z.enum(["day", "trip"]),
@@ -142,7 +133,9 @@ const machineSchema = z.object({
 });
 
 export async function saveMachine(fd: FormData) {
-  const s = await guard();
+  const s = await requireSession();
+  const photo = fd.get("photo");
+  fd.delete("photo");
   const raw = Object.fromEntries(fd.entries());
   const specs = String(raw.specs ?? "").split("\n").map((l) => l.split(":")).filter((p) => p.length >= 2)
     .map(([k, ...v]) => [k.trim(), v.join(":").trim()]);
@@ -150,6 +143,8 @@ export async function saveMachine(fd: FormData) {
   if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid machine");
   const { id, operatorRate, ...rest } = parsed.data;
   const data = { ...rest, operatorRate: operatorRate === "" ? null : operatorRate };
+  if (photo instanceof File && photo.size > 0) data.image = await storePhoto(photo, data.slug);
+  if (!data.image || data.image === "/img/") throw new Error("Upload a photo or give an image path.");
   if (id) {
     const before = await prisma.machine.findUnique({ where: { id } });
     await prisma.machine.update({ where: { id }, data });
@@ -166,7 +161,7 @@ export async function saveMachine(fd: FormData) {
 }
 
 export async function toggleAvailable(fd: FormData) {
-  const s = await guard();
+  const s = await requireSession();
   const id = str(fd, "id");
   const m = await prisma.machine.findUnique({ where: { id } });
   if (!m) return;
@@ -176,7 +171,7 @@ export async function toggleAvailable(fd: FormData) {
 }
 
 export async function deleteMachine(fd: FormData) {
-  const s = await guardSuper();
+  const s = await requireSuper();
   const id = str(fd, "id");
   const m = await prisma.machine.findUnique({ where: { id } });
   if (!m) return;
@@ -188,7 +183,7 @@ export async function deleteMachine(fd: FormData) {
 
 /* ---------- staff (super admin only) ---------- */
 export async function createStaff(_prev: { error?: string; ok?: string } | undefined, fd: FormData) {
-  const s = await guardSuper();
+  const s = await requireSuper();
   const username = str(fd, "username").toLowerCase();
   const name = str(fd, "name");
   const role = str(fd, "role") === "superadmin" ? "superadmin" : "admin";
@@ -204,7 +199,7 @@ export async function createStaff(_prev: { error?: string; ok?: string } | undef
 }
 
 export async function setStaffActive(fd: FormData) {
-  const s = await guardSuper();
+  const s = await requireSuper();
   const id = str(fd, "id");
   const active = str(fd, "active") === "1";
   if (id === s.id) return; // cannot deactivate yourself
@@ -214,7 +209,7 @@ export async function setStaffActive(fd: FormData) {
 }
 
 export async function resetStaffPassword(_prev: { error?: string; ok?: string } | undefined, fd: FormData) {
-  const s = await guardSuper();
+  const s = await requireSuper();
   const id = str(fd, "id");
   const password = String(fd.get("password") ?? "");
   if (password.length < 8) return { error: "Password must be at least 8 characters." };
@@ -224,7 +219,7 @@ export async function resetStaffPassword(_prev: { error?: string; ok?: string } 
 }
 
 export async function changeOwnPassword(_prev: { error?: string; ok?: string } | undefined, fd: FormData) {
-  const s = await guard();
+  const s = await requireSession();
   const current = String(fd.get("current") ?? ""), next = String(fd.get("next") ?? "");
   const me = await prisma.staff.findUnique({ where: { id: s.id } });
   if (!me || !verifyPassword(current, me.passwordHash)) return { error: "Current password is wrong." };

@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { cache } from "react";
 import { prisma } from "./db";
 
@@ -53,4 +54,18 @@ export async function setSessionCookie(staffId: string) {
 export async function clearSessionCookie() {
   const store = await cookies();
   store.delete(COOKIE);
+}
+
+/** Signed-in staff member or a redirect to the login page. Use in server actions and pages. */
+export async function requireSession(): Promise<Session> {
+  const s = await getSession();
+  if (!s) redirect("/admin/login");
+  return s;
+}
+
+/** Super admin or a redirect back to the desk with a notice. */
+export async function requireSuper(): Promise<Session> {
+  const s = await requireSession();
+  if (s.role !== "superadmin") redirect("/admin?denied=1");
+  return s;
 }

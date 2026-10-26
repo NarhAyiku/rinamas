@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { CATEGORIES, ghs, parseSpecs } from "@/lib/format";
-import { deleteMachine, saveMachine, toggleAvailable } from "../actions";
+import { deleteMachine, saveMachine, toggleAvailable } from "@/app/admin/actions";
 import { getSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +21,10 @@ function MachineForm({ m }: { m?: Awaited<ReturnType<typeof prisma.machine.findM
         <label className="f">Per<select name="rateUnit" defaultValue={m?.rateUnit ?? "day"}><option value="day">day</option><option value="trip">trip</option></select></label>
         <label className="f">Operator / day (blank = included)<input name="operatorRate" type="number" min={0} defaultValue={m?.operatorRate ?? ""} /></label>
         <label className="f">Sort order<input name="sortOrder" type="number" defaultValue={m?.sortOrder ?? 99} /></label>
-        <label className="f">Image path<input name="image" defaultValue={m?.image ?? "/img/"} placeholder="/img/machine.jpg" required /></label>
+      </div>
+      <div className="inline-form">
+        <label className="f">Photo{m ? " (choose a file to replace it)" : ""}<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+        <label className="f">Or image path<input name="image" defaultValue={m?.image ?? ""} placeholder="/img/machine.jpg or https://…" /></label>
       </div>
       <label className="f">Specs, one per line as Label: value<textarea name="specs" defaultValue={specsText} rows={4} /></label>
       <div className="row-form">
@@ -39,7 +42,7 @@ export default async function FleetAdmin() {
   return (
     <>
       <div className="admin-top"><div><p className="eyebrow">Yard</p><h2>Fleet &amp; rates</h2></div></div>
-      <p className="lede" style={{ marginBottom: "1.4rem" }}>Changes here show on the public site immediately. Day rates are machine only for 8 hours; week and month prices are computed from the day rate. Image paths point to files in the public/img folder.</p>
+      <p className="lede" style={{ marginBottom: "1.4rem" }}>Changes here show on the public site immediately. Day rates are machine only for 8 hours; week and month prices are computed from the day rate. Upload a photo for each machine (JPG, PNG or WebP, under 5 MB); the old photo is replaced.</p>
       <div style={{ display: "grid", gap: "1rem" }}>
         {machines.map((m) => (
           <details key={m.id} className="panel" style={{ padding: 0 }}>
