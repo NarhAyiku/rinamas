@@ -8,23 +8,24 @@ datasource db {
 }
 
 model Machine {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  name        String
-  category    String   // earth | haul | road | lift
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  name          String
+  category      String   // earth | haul | road | lift
   categoryLabel String
-  image       String
-  specs       String   // JSON array of [label, value]
-  dayRate     Int      // GHS, machine only, 8h
-  rateUnit    String   @default("day") // day | trip
-  operatorRate Int?    // GHS per day, null = included
-  available   Boolean  @default(true)
-  sortOrder   Int      @default(0)
-  quotes      QuoteRequest[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  image         String
+  specs         String   // JSON array of [label, value]
+  dayRate       Int      // GHS, machine only, 8h
+  rateUnit      String   @default("day") // day | trip
+  operatorRate  Int?     // GHS per day, null = included
+  available     Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  quotes        QuoteRequest[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
+// One record per job: enquiry -> quote -> deposit -> dispatch -> on hire -> return -> closed
 model QuoteRequest {
   id          String   @id @default(cuid())
   reference   String   @unique
@@ -34,13 +35,72 @@ model QuoteRequest {
   startDate   String
   duration    String
   site        String
-  operator    String   // with | without
+  operator    String   // with | without  (wet / dry hire)
   fuel        String   // with | without
   name        String
   phone       String
   notes       String?
-  status      String   @default("new") // new | quoted | confirmed | closed
+  status      String   @default("new") // new | quoted | confirmed | on_hire | closed | lost
   adminNote   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  // quote & money (GHS)
+  quotedAmount   Int?
+  depositAmount  Int?
+  depositPaidAt  String?
+  depositMethod  String?  // momo | bank | cash | cheque
+
+  // site contact
+  siteAgentName  String?
+  siteAgentPhone String?
+
+  // dispatch & return
+  dispatchDate   String?
+  dispatchMeter  Int?
+  dispatchNotes  String?
+  returnDate     String?
+  returnMeter    Int?
+  returnNotes    String?
+
+  hourLogs   HourLog[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// Daily log signed off by the site agent: working hours, standby, fuel supplied
+model HourLog {
+  id        String   @id @default(cuid())
+  quoteId   String
+  quote     QuoteRequest @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  date      String
+  hours     Float    @default(0)
+  standby   Float    @default(0)
+  fuelL     Float    @default(0)
+  note      String?
+  loggedBy  String?
+  createdAt DateTime @default(now())
+}
+
+model Staff {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  name         String
+  role         String   @default("admin") // admin | superadmin
+  passwordHash String
+  active       Boolean  @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  activities   ActivityLog[]
+}
+
+// Everything staff do, for the super admin to review
+model ActivityLog {
+  id         String   @id @default(cuid())
+  staffId    String?
+  staff      Staff?   @relation(fields: [staffId], references: [id])
+  actorName  String
+  action     String   // e.g. quote.status, quote.hire, hourlog.add, machine.save, staff.create, auth.login
+  targetType String?  // quote | machine | staff
+  targetId   String?
+  summary    String
+  createdAt  DateTime @default(now())
 }

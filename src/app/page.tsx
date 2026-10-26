@@ -5,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { Fleet } from "@/components/Fleet";
 import { QuoteForm } from "@/components/QuoteForm";
 import { CopyButton } from "@/components/CopyButton";
+import { StickyBar } from "@/components/StickyBar";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,7 @@ export default async function Home() {
     <>
       <Header />
       <section className="hero" id="top">
+        <div className="hero-glow" aria-hidden="true" />
         <div className="wrap">
           <div>
             <p className="eyebrow" style={{ color: "var(--amber)" }}>Low beds · Excavators · Backhoes · Dozers · Loaders · Graders</p>
@@ -94,10 +96,10 @@ export default async function Home() {
         <div className="wrap">
           <div className="head"><div><p className="eyebrow">How hire works</p><h2 style={{ marginTop: ".5rem" }}>From request to iron on site</h2></div></div>
           <div className="steps">
-            <div className="step"><span className="n">STEP 1</span><h3>Send the job</h3><p>Tell us the machine, dates, site location, operator and fuel choice. WhatsApp, a call or the form below all reach dispatch.</p></div>
-            <div className="step"><span className="n">STEP 2</span><h3>Confirm &amp; deposit</h3><p>You get a written quote within the working day. A 50 percent deposit by MoMo or bank transfer locks the unit and the date.</p></div>
-            <div className="step"><span className="n">STEP 3</span><h3>Mobilise</h3><p>We load the machine on a low bed at the N1 yard. Greater Accra sites usually see it within 24 hours; other regions within 48.</p></div>
-            <div className="step"><span className="n">STEP 4</span><h3>Work &amp; settle</h3><p>Hours are logged off the machine&apos;s meter and signed daily by your site agent. Balance is settled against the signed log.</p></div>
+            <div className="step"><span className="n"><em>01</em> Step 1</span><h3>Send the job</h3><p>Tell us the machine, dates, site location, operator and fuel choice. WhatsApp, a call or the form below all reach dispatch.</p></div>
+            <div className="step"><span className="n"><em>02</em> Step 2</span><h3>Confirm &amp; deposit</h3><p>You get a written quote within the working day. A 50 percent deposit by MoMo or bank transfer locks the unit and the date.</p></div>
+            <div className="step"><span className="n"><em>03</em> Step 3</span><h3>Mobilise</h3><p>We load the machine on a low bed at the N1 yard. Greater Accra sites usually see it within 24 hours; other regions within 48.</p></div>
+            <div className="step"><span className="n"><em>04</em> Step 4</span><h3>Work &amp; settle</h3><p>Hours are logged off the machine&apos;s meter and signed daily by your site agent. Balance is settled against the signed log.</p></div>
           </div>
         </div>
       </section>
@@ -117,9 +119,9 @@ export default async function Home() {
             <div className="depot">
               <h3>The yard</h3>
               <dl>
-                <dt>Address</dt><dd>RINAMAS Equipment and Trading Enterprise<br />Off N1 Highway, George Walker Bush Motorway<br />Accra, Ghana</dd>
+                <dt>Address</dt><dd>RINAMAS Equipment and Trading Enterprise<br />Off N1 Highway, George Walker Bush Motorway<br />Accra, Ghana<br /><a className="maplink" href="https://www.google.com/maps/search/?api=1&query=George+Walker+Bush+Motorway+N1+Highway+Accra" target="_blank" rel="noopener">Open in Google Maps ↗</a></dd>
                 <dt>CEO</dt><dd>Narh Richard Mashie</dd>
-                <dt>Phone</dt><dd>+233 (0)24 351 8749<br />+233 (0)24 927 6713</dd>
+                <dt>Phone</dt><dd><a href="tel:+233243518749">+233 (0)24 351 8749</a><br /><a href="tel:+233249276713">+233 (0)24 927 6713</a></dd>
                 <dt>Hours</dt><dd>Mon–Sat, 06:00–18:00 GMT. Dispatch line answers Sundays for machines already on hire.</dd>
               </dl>
             </div>
@@ -134,9 +136,9 @@ export default async function Home() {
             <h2 style={{ marginTop: ".5rem" }}>Get a quote today</h2>
             <p className="lede">Send the form and dispatch gets your request straight away, with a reference number and a one-tap WhatsApp follow-up. Or reach us directly on the numbers here.</p>
             <div className="contact">
-              <div className="contact-row"><span className="lbl">WhatsApp</span><code>024 351 8749</code><CopyButton text="+233243518749" /></div>
-              <div className="contact-row"><span className="lbl">Call</span><code>024 927 6713</code><CopyButton text="+233249276713" /></div>
-              <div className="contact-row"><span className="lbl">Yard</span><code>Off N1 Highway, George Walker Bush Motorway, Accra</code></div>
+              <div className="contact-row"><span className="lbl">WhatsApp</span><a className="code" href="https://wa.me/233243518749?text=Hello%20RINAMAS%20dispatch%2C%20I%20need%20a%20machine." target="_blank" rel="noopener">024 351 8749</a><CopyButton text="+233243518749" /></div>
+              <div className="contact-row"><span className="lbl">Call</span><a className="code" href="tel:+233249276713">024 927 6713</a><CopyButton text="+233249276713" /></div>
+              <div className="contact-row"><span className="lbl">Yard</span><a className="code" href="https://www.google.com/maps/search/?api=1&query=George+Walker+Bush+Motorway+N1+Highway+Accra" target="_blank" rel="noopener">Off N1 Highway, George Walker Bush Motorway, Accra ↗</a></div>
             </div>
           </div>
           <QuoteForm machines={machines.map((m) => ({ id: m.id, name: m.name }))} />
@@ -157,6 +159,7 @@ export default async function Home() {
         </div>
       </section>
       <Footer />
+      <StickyBar wa={process.env.WHATSAPP_NUMBER ?? "233243518749"} />
     </>
   );
 }

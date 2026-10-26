@@ -13,8 +13,8 @@ export function Footer() {
           </p>
         </div>
         <div className="cols">
-          <div><b>Yard</b><span>Off N1 Highway</span><span>George Walker Bush Motorway, Accra</span></div>
-          <div><b>Dispatch</b><span>024 351 8749</span><span>024 927 6713</span></div>
+          <div><b>Yard</b><a href="https://www.google.com/maps/search/?api=1&query=George+Walker+Bush+Motorway+N1+Highway+Accra" target="_blank" rel="noopener">Off N1 Highway</a><span>George Walker Bush Motorway, Accra</span></div>
+          <div><b>Dispatch</b><a href="tel:+233243518749">024 351 8749</a><a href="tel:+233249276713">024 927 6713</a></div>
           <div><b>CEO</b><span>Narh Richard Mashie</span></div>
           <div><b>Site</b><a href="/#fleet">Fleet</a><a href="/#rates">Rates</a><a href="/#faq">FAQ</a><a href="/admin">Admin</a></div>
         </div>

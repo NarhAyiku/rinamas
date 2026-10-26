@@ -27,7 +27,7 @@ export function Fleet({ machines }: { machines: MachineCard[] }) {
       </div>
       <div className="fleet">
         {shown.map((m) => (
-          <article className="machine" key={m.id}>
+          <article className="machine" key={m.id} onClick={() => pick(m)} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") pick(m); }} aria-label={`${m.name}, add to quote`}>
             <div className="art">
               <img src={m.image} alt={m.name} loading="lazy" width={1000} height={750} />
               {!m.available && <span className="unavailable">On hire · ask for dates</span>}
@@ -45,7 +45,7 @@ export function Fleet({ machines }: { machines: MachineCard[] }) {
                   <span className="from">From, per {m.rateUnit === "trip" ? "trip (Greater Accra)" : "day"}</span><br />
                   <b>{ghs(m.dayRate)}</b>
                 </div>
-                <button type="button" onClick={() => pick(m)}>Add to quote</button>
+                <button type="button" onClick={(e) => { e.stopPropagation(); pick(m); }}>Add to quote →</button>
               </div>
             </div>
           </article>

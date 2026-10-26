@@ -7,8 +7,22 @@ export const CATEGORIES: Record<string, string> = {
   lift: "Lifting",
 };
 
-export const STATUSES = ["new", "quoted", "confirmed", "closed"] as const;
-export type Status = (typeof STATUSES)[number];
+// Hire lifecycle. Order matters: it is the progress shown to the customer.
+export const STATUSES = ["new", "quoted", "confirmed", "on_hire", "closed"] as const;
+export const ALL_STATUSES = [...STATUSES, "lost"] as const;
+export type Status = (typeof ALL_STATUSES)[number];
+
+export const STATUS_LABEL: Record<string, string> = {
+  new: "New", quoted: "Quoted", confirmed: "Confirmed", on_hire: "On hire", closed: "Closed", lost: "Lost",
+};
+export const STATUS_HINT: Record<string, string> = {
+  new: "Request received, not yet quoted",
+  quoted: "Written quote sent to the customer",
+  confirmed: "Deposit received, unit and date locked",
+  on_hire: "Machine dispatched and working on site",
+  closed: "Returned and balance settled",
+  lost: "Customer did not proceed",
+};
 
 export function makeReference() {
   const d = new Date();
@@ -21,6 +35,14 @@ export function waLink(number: string, text: string) {
   return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
 }
 
+/** Ghana local number (024 351 8749) -> international digits (233243518749). */
+export function intl(phone: string) {
+  const d = phone.replace(/\D/g, "");
+  if (d.startsWith("233")) return d;
+  if (d.startsWith("0")) return "233" + d.slice(1);
+  return d;
+}
+
 export function parseSpecs(json: string): [string, string][] {
   try {
     const v = JSON.parse(json);
@@ -29,3 +51,5 @@ export function parseSpecs(json: string): [string, string][] {
     return [];
   }
 }
+
+export const fmtDate = (d: Date) => d.toLocaleString("en-GB", { timeZone: "Africa/Accra", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });

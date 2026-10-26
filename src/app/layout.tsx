@@ -1,14 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { SwRegister } from "@/components/SwRegister";
 
 export const metadata: Metadata = {
   title: { default: "RINAMAS Equipment & Trading", template: "%s · RINAMAS" },
   description:
     "Heavy-duty machine hire in Ghana: low beds, excavators, backhoes, dozers, loaders, graders, rollers, tippers and cranes, with operators and haulage from our yard off the N1 Highway, Accra.",
-  icons: { icon: "/brand/rinamas-badge.svg" },
+  icons: { icon: "/brand/rinamas-badge.svg", apple: "/apple-touch-icon.png" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "RINAMAS" },
 };
 
-export const viewport: Viewport = { themeColor: "#23262A", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#23262A", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -21,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Barlow:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap"
         />
       </head>
-      <body>{children}</body>
+      <body>{children}<SwRegister /></body>
     </html>
   );
 }

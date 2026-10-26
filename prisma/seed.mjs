@@ -1,5 +1,11 @@
 import { PrismaClient } from "@prisma/client";
+import { randomBytes, scryptSync } from "node:crypto";
 const prisma = new PrismaClient();
+
+function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  return `scrypt$${salt}$${scryptSync(password, salt, 64).toString("hex")}`;
+}
 
 const machines = [
   { slug: "lowbed", name: "Low bed trailer, 60T", category: "haul", categoryLabel: "Haulage · Mobilisation", image: "/img/lowbed.jpg", dayRate: 2800, rateUnit: "trip", operatorRate: null,
@@ -33,4 +39,17 @@ for (const [i, m] of machines.entries()) {
   await prisma.machine.upsert({ where: { slug: m.slug }, update: data, create: data });
 }
 console.log(`Seeded ${machines.length} machines`);
+
+// Staff accounts. Passwords come from .env; existing accounts keep their password.
+const staff = [
+  { username: "ceo", name: "Narh Richard Mashie", role: "superadmin", password: process.env.SUPERADMIN_PASSWORD },
+  { username: "frontdesk", name: "Front desk", role: "admin", password: process.env.ADMIN_PASSWORD },
+];
+for (const s of staff) {
+  if (!s.password) { console.log(`Skipping ${s.username}: no password in .env`); continue; }
+  const exists = await prisma.staff.findUnique({ where: { username: s.username } });
+  if (exists) continue;
+  await prisma.staff.create({ data: { username: s.username, name: s.name, role: s.role, passwordHash: hashPassword(s.password) } });
+  console.log(`Created ${s.role} account "${s.username}"`);
+}
 await prisma.$disconnect();
