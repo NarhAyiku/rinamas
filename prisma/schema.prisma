@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Machine {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  category    String   // earth | haul | road | lift
+  categoryLabel String
+  image       String
+  specs       String   // JSON array of [label, value]
+  dayRate     Int      // GHS, machine only, 8h
+  rateUnit    String   @default("day") // day | trip
+  operatorRate Int?    // GHS per day, null = included
+  available   Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  quotes      QuoteRequest[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model QuoteRequest {
+  id          String   @id @default(cuid())
+  reference   String   @unique
+  machineId   String?
+  machine     Machine? @relation(fields: [machineId], references: [id])
+  machineName String
+  startDate   String
+  duration    String
+  site        String
+  operator    String   // with | without
+  fuel        String   // with | without
+  name        String
+  phone       String
+  notes       String?
+  status      String   @default("new") // new | quoted | confirmed | closed
+  adminNote   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
