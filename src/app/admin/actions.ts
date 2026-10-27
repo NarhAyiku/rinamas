@@ -119,7 +119,7 @@ export async function deleteHourLog(fd: FormData) {
 /* ---------- fleet ---------- */
 const machineSchema = z.object({
   id: z.string().optional(),
-  slug: z.string().trim().regex(/^[a-z0-9-]+$/, "slug: lowercase letters, numbers, dashes"),
+  slug: z.string().trim().regex(/^[a-z0-9-]+$/, "use lowercase letters, numbers and dashes only, e.g. jcb-telehandler"),
   name: z.string().trim().min(2),
   category: z.enum(["earth", "haul", "road", "lift"]),
   categoryLabel: z.string().trim().min(2),
