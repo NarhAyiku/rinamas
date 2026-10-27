@@ -4,6 +4,14 @@
 import { PrismaClient } from "@prisma/client";
 import { randomBytes, scryptSync } from "node:crypto";
 
+const url = process.env.DATABASE_URL ?? "";
+if (!/^postgres(ql)?:\/\//.test(url)) {
+  console.error(`DATABASE_URL is not a Postgres connection string (got "${url.slice(0, 12)}…").
+If you pulled it with "vercel env pull", Vercel writes "[SENSITIVE]" for Secret values instead of the real string.
+Copy the connection string from the Vercel dashboard: project rinamas → Storage → the Neon database → .env.local snippet → Show secret,
+paste it into .env.vercel.local as DATABASE_URL="postgresql://…", then run this script again.`);
+  process.exit(1);
+}
 const prisma = new PrismaClient();
 const hash = (pw) => { const salt = randomBytes(16).toString("hex"); return `scrypt$${salt}$${scryptSync(pw, salt, 64).toString("hex")}`; };
 const host = (process.env.DATABASE_URL ?? "").replace(/.*@/, "").split("/")[0] || "(no DATABASE_URL)";
