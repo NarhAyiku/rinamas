@@ -132,7 +132,9 @@ const machineSchema = z.object({
   sortOrder: z.coerce.number().int(),
 });
 
-export async function saveMachine(fd: FormData) {
+export type MachineFormState = { error?: string; ok?: string } | undefined;
+
+export async function saveMachine(_prev: MachineFormState, fd: FormData): Promise<MachineFormState> {
   const s = await requireSession();
   const photo = fd.get("photo");
   fd.delete("photo");
@@ -140,24 +142,41 @@ export async function saveMachine(fd: FormData) {
   const specs = String(raw.specs ?? "").split("\n").map((l) => l.split(":")).filter((p) => p.length >= 2)
     .map(([k, ...v]) => [k.trim(), v.join(":").trim()]);
   const parsed = machineSchema.safeParse({ ...raw, specs: JSON.stringify(specs), available: raw.available === "on" });
-  if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid machine");
+  if (!parsed.success) {
+    const i = parsed.error.issues[0];
+    return { error: `${i?.path?.[0] ? String(i.path[0]) + ": " : ""}${i?.message ?? "Check the machine details."}` };
+  }
   const { id, operatorRate, ...rest } = parsed.data;
   const data = { ...rest, operatorRate: operatorRate === "" ? null : operatorRate };
-  if (photo instanceof File && photo.size > 0) data.image = await storePhoto(photo, data.slug);
-  if (!data.image || data.image === "/img/") throw new Error("Upload a photo or give an image path.");
-  if (id) {
-    const before = await prisma.machine.findUnique({ where: { id } });
-    await prisma.machine.update({ where: { id }, data });
-    const diffs: string[] = [];
-    if (before && before.dayRate !== data.dayRate) diffs.push(`rate ${ghs(before.dayRate)} → ${ghs(data.dayRate)}`);
-    if (before && before.name !== data.name) diffs.push(`renamed from "${before.name}"`);
-    if (before && before.available !== data.available) diffs.push(data.available ? "marked available" : "marked on hire");
-    await logActivity(s, "machine.save", `${data.name}: ${diffs.length ? diffs.join(", ") : "details edited"}`, { type: "machine", id });
-  } else {
-    const m = await prisma.machine.create({ data });
-    await logActivity(s, "machine.create", `Added ${m.name} at ${ghs(m.dayRate)}/${m.rateUnit}`, { type: "machine", id: m.id });
+  try {
+    if (photo instanceof File && photo.size > 0) data.image = await storePhoto(photo, data.slug);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("machine photo upload failed", { slug: data.slug, size: photo instanceof File ? photo.size : 0, type: photo instanceof File ? photo.type : "", msg });
+    return { error: `Photo upload failed: ${msg}` };
+  }
+  if (!data.image || data.image === "/img/") return { error: "Upload a photo or give an image path." };
+  try {
+    if (id) {
+      const before = await prisma.machine.findUnique({ where: { id } });
+      await prisma.machine.update({ where: { id }, data });
+      const diffs: string[] = [];
+      if (before && before.dayRate !== data.dayRate) diffs.push(`rate ${ghs(before.dayRate)} → ${ghs(data.dayRate)}`);
+      if (before && before.name !== data.name) diffs.push(`renamed from "${before.name}"`);
+      if (before && before.available !== data.available) diffs.push(data.available ? "marked available" : "marked on hire");
+      if (before && before.image !== data.image) diffs.push("photo replaced");
+      await logActivity(s, "machine.save", `${data.name}: ${diffs.length ? diffs.join(", ") : "details edited"}`, { type: "machine", id });
+    } else {
+      if (await prisma.machine.findUnique({ where: { slug: data.slug } })) return { error: `A machine with the slug "${data.slug}" already exists. Pick another slug.` };
+      const m = await prisma.machine.create({ data });
+      await logActivity(s, "machine.create", `Added ${m.name} at ${ghs(m.dayRate)}/${m.rateUnit}`, { type: "machine", id: m.id });
+    }
+  } catch (e) {
+    console.error("machine save failed", e);
+    return { error: "Could not save the machine. Try again, and tell the CEO if it keeps failing." };
   }
   revalidatePath("/"); revalidatePath("/admin/fleet");
+  return { ok: id ? `${data.name} saved.` : `${data.name} added to the fleet.` };
 }
 
 export async function toggleAvailable(fd: FormData) {
