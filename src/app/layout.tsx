@@ -5,7 +5,7 @@ import { SwRegister } from "@/components/SwRegister";
 export const metadata: Metadata = {
   title: { default: "RINAMAS Equipment & Trading", template: "%s · RINAMAS" },
   description:
-    "Heavy-duty machine hire in Ghana: low beds, excavators, backhoes, dozers, loaders, graders, rollers, tippers and cranes, with operators and haulage from our yard off the N1 Highway, Accra.",
+    "JCB-led heavy-duty machine hire in Ghana: Loadall telehandlers, backhoes, excavators, dozers, loaders, graders, rollers, low beds and cranes, with operators and haulage from our yard off the N1 Highway, Accra.",
   icons: { icon: "/brand/rinamas-badge.svg", apple: "/apple-touch-icon.png" },
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "RINAMAS" },
 };

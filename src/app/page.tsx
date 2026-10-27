@@ -30,15 +30,15 @@ export default async function Home() {
         <div className="hero-glow" aria-hidden="true" />
         <div className="wrap">
           <div>
-            <p className="eyebrow" style={{ color: "var(--amber)" }}>Low beds · Excavators · Backhoes · Dozers · Loaders · Graders</p>
+            <p className="eyebrow" style={{ color: "var(--amber)" }}>JCB Loadalls · Backhoes · Excavators · Dozers · Low beds</p>
             <h1 style={{ marginTop: ".8rem" }}>Heavy iron<br />for Ghana&apos;s<br /><em>working ground.</em></h1>
-            <p className="lede">RINAMAS hires out serviced heavy-duty machines to contractors, estate developers, quarries and road crews across Ghana. Operator, fuel plan and low-bed haulage can all go on one contract, mobilised from our yard off the N1 Highway in Accra.</p>
+            <p className="lede">RINAMAS hires out serviced heavy-duty machines, JCB first and Caterpillar where the job calls for it, to contractors, estate developers, quarries and road crews across Ghana. Operator, fuel plan and low-bed haulage can all go on one contract, mobilised from our yard off the N1 Highway in Accra.</p>
             <div className="cta">
               <a className="btn btn-accent" href="#quote">Request a quote</a>
               <a className="btn btn-ghost" href="#fleet">See the fleet &amp; rates</a>
             </div>
           </div>
-          <div className="hero-art"><img src="/img/hero.jpg" alt="Caterpillar excavator with bucket lowered, ready to work" width={1600} height={1016} /></div>
+          <div className="hero-art"><img src="/img/hero.jpg" alt="JCB 527-58 Loadall telehandler with bucket lowered, ready to work" width={1600} height={931} /></div>
         </div>
       </section>
       <div className="stripe" aria-hidden="true" />
