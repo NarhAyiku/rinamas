@@ -38,7 +38,7 @@ export default async function Home() {
               <a className="btn btn-ghost" href="#fleet">See the fleet &amp; rates</a>
             </div>
           </div>
-          <div className="hero-art"><img src="/img/hero.jpg" alt="JCB 527-58 Loadall telehandler with bucket lowered, ready to work" width={1600} height={931} /></div>
+          <div className="hero-art"><img src="/img/hero-loadall.jpg" alt="JCB 527-58 Loadall telehandler with bucket lowered, ready to work" width={1600} height={931} /></div>
         </div>
       </section>
       <div className="stripe" aria-hidden="true" />

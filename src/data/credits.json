@@ -110,5 +110,13 @@
     "artist": "Matti Blume",
     "license": "CC BY-SA 4.0",
     "page": "https://commons.wikimedia.org/wiki/File:Water_Truck,_Sagnarigu_(P1100297).jpg"
+  },
+  {
+    "key": "loadall",
+    "label": "Loadall telehandler",
+    "title": "JCB 527-58 Agri Loadall 01.jpg",
+    "artist": "Huhu Uet",
+    "license": "CC BY 3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:JCB_527-58_Agri_Loadall_01.jpg"
   }
 ]

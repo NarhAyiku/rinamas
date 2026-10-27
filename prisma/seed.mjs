@@ -28,6 +28,8 @@ const machines = [
     specs: [["Operating weight", "10–12 T"], ["Drum", "2.1 m smooth · padfoot"], ["Centrifugal force", "260 kN"], ["Best for", "Sub-base, laterite fill"]] },
   { slug: "tipper", name: "Tipper truck, 10 m³", category: "haul", categoryLabel: "Haulage · Spoil & aggregate", image: "/img/tipper.jpg", dayRate: 2500, operatorRate: null,
     specs: [["Body", "10 m³ · 15 T"], ["Drive", "6×4"], ["Minimum", "Full day"], ["Best for", "Spoil removal, chippings"]] },
+  { slug: "loadall", name: "JCB Loadall telehandler, 2.7T", category: "lift", categoryLabel: "Lifting · Telehandler", image: "/img/loadall.jpg", dayRate: 3800, operatorRate: 350,
+    specs: [["Lift capacity", "2.7 T"], ["Lift height", "5.8 m"], ["Attachments", "Forks, bucket, man basket"], ["Best for", "Blocks, roofing, pallets to height"]] },
   { slug: "mobile-crane", name: "Mobile crane, 50T", category: "lift", categoryLabel: "Lifting · Steel & precast", image: "/img/crane.jpg", dayRate: 15000, operatorRate: 800,
     specs: [["Capacity", "50 T"], ["Main boom", "40 m"], ["Crew", "Operator + rigger"], ["Best for", "Precast, steel erection"]] },
   { slug: "water-tanker", name: "Water tanker, 10,000 L", category: "haul", categoryLabel: "Haulage · Dust control", image: "/img/tanker.jpg", dayRate: 2200, operatorRate: null,
