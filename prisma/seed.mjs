@@ -8,7 +8,7 @@ function hashPassword(password) {
 }
 
 const machines = [
-  { slug: "lowbed", name: "Low bed trailer, 60T", category: "haul", categoryLabel: "Haulage · Mobilisation", image: "/img/lowbed-goldhofer.jpg", dayRate: 2800, rateUnit: "trip", operatorRate: null,
+  { slug: "lowbed", name: "Low bed trailer, 60T", category: "haul", categoryLabel: "Haulage · Mobilisation", image: "/img/lowbed-jcb.jpg", dayRate: 2800, rateUnit: "trip", operatorRate: null,
     specs: [["Payload", "60 T"], ["Deck", "3-axle · 3.0 m wide"], ["Tractor", "6×4 prime mover"], ["Best for", "Moving excavators, dozers"]] },
   { slug: "excavator-20t", name: "Excavator, 20T class", category: "earth", categoryLabel: "Earthmoving · Trenching", image: "/img/exc20.jpg", dayRate: 8500, operatorRate: 500,
     specs: [["Operating weight", "20–22 T"], ["Bucket", "0.9–1.0 m³"], ["Dig depth", "6.7 m"], ["Best for", "Foundations, drains, bulk dig"]] },
