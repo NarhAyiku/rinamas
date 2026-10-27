@@ -7,6 +7,7 @@ Heavy-equipment hire site + admin for RINAMAS Equipment and Trading Enterprise (
 - Data: `prisma/schema.prisma` (Machine, QuoteRequest = one hire record per job, HourLog, Staff, ActivityLog). Seed in `prisma/seed.mjs`. Rates are GH₵ integers. Statuses: new → quoted → confirmed → on_hire → closed, plus lost (`src/lib/format.ts`).
 - Auth: Staff accounts with scrypt password hashes, roles `admin` | `superadmin`, HMAC session cookie (`src/lib/auth.ts`). Every server action in `src/app/admin/actions.ts` calls `guard()` or `guardSuper()` and logs to ActivityLog via `logActivity` with a human-readable before→after summary. Keep that pattern for any new action.
 - Screenshots for review: Chrome extension cannot open localhost here; use playwright-core with `channel: "chrome"` (dev dependency) against `next start`.
+- Machine photos: `src/lib/upload.ts`. Production uses the private Vercel Blob store "Rinamas" (BLOB_STORE_ID, OIDC); images are stored as `machines/<slug>-<ts>.<ext>` and served by `src/app/photos/[...path]/route.ts` as immutable. Local dev writes to public/img.
 - Photos are CC-licensed Wikimedia Commons images; the credits list in `src/data/credits.json` must stay in the footer until they are replaced with RINAMAS's own photos.
 - Monolith-first by design; major capabilities graduate to their own services when justified.
 - Commands: `npm run dev`, `npm run db:push`, `npm run db:seed`, `npm run build`.

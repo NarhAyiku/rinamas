@@ -32,6 +32,10 @@ Works on any Node host (Vercel, Railway, Render, a VPS). Set the env vars from `
 
 Next.js 15 (App Router, server actions), React 19, Prisma 6 on Postgres, Zod validation. No CSS framework: design tokens live in `src/app/globals.css`.
 
+## Photos
+
+Admins upload machine photos under Fleet & rates. In production they go to the project's Vercel Blob store (private store, OIDC credentials, served through `/photos/...`); locally they are written to `public/img`.
+
 ## Roles
 
 | | Admin (front desk) | Super admin |
