@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 type Row = Awaited<ReturnType<typeof prisma.machine.findMany>>[number];
 const toForm = (m: Row): MachineFormData => ({
   id: m.id, name: m.name, slug: m.slug, category: m.category, categoryLabel: m.categoryLabel, dayRate: m.dayRate, rateUnit: m.rateUnit,
-  operatorRate: m.operatorRate, sortOrder: m.sortOrder, image: m.image, available: m.available,
+  operatorRate: m.operatorRate, sortOrder: m.sortOrder, image: m.image, available: m.available, priceOnRequest: m.priceOnRequest,
   specsText: parseSpecs(m.specs).map(([k, v]) => `${k}: ${v}`).join("\n"),
 });
 
@@ -28,7 +28,7 @@ export default async function FleetAdmin() {
               <img src={m.image} alt="" width={72} height={54} style={{ objectFit: "cover", borderRadius: 4 }} />
               <b style={{ flex: 1 }}>{m.name}</b>
               <span className="pill pill-plain">{CATEGORIES[m.category] ?? m.category}</span>
-              <span className="num" style={{ fontFamily: "var(--mono)" }}>{ghs(m.dayRate)} / {m.rateUnit}</span>
+              <span className="num" style={{ fontFamily: "var(--mono)" }}>{m.priceOnRequest ? "on request" : `${ghs(m.dayRate)} / ${m.rateUnit}`}</span>
               <span className={`pill ${m.available ? "pill-confirmed" : "pill-closed"}`}><i aria-hidden="true" />{m.available ? "Available" : "On hire"}</span>
             </summary>
             <div style={{ padding: "0 1.4rem 1.4rem", display: "grid", gap: ".8rem" }}>

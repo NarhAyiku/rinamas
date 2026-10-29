@@ -7,6 +7,9 @@ import { Fleet } from "@/components/Fleet";
 import { QuoteForm } from "@/components/QuoteForm";
 import { CopyButton } from "@/components/CopyButton";
 import { StickyBar } from "@/components/StickyBar";
+import { MachineTypes } from "@/components/MachineTypes";
+import Image from "next/image";
+import { fmtReviewed, getPricing } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +21,9 @@ const REGIONS: [string, string][] = [
 ];
 
 export default async function Home() {
-  const machines = await prisma.machine.findMany({ orderBy: { sortOrder: "asc" } });
+  const [machines, pricing] = await Promise.all([prisma.machine.findMany({ orderBy: [{ available: "desc" }, { sortOrder: "asc" }] }), getPricing()]);
   const wa = whatsappNumber();
+  const reviewed = fmtReviewed(pricing.reviewedAt);
   const week = (d: number) => ghs(d * 6 * 0.9);
   const month = (d: number) => ghs(d * 26 * 0.8);
 
@@ -30,17 +34,24 @@ export default async function Home() {
         <div className="hero-glow" aria-hidden="true" />
         <div className="wrap">
           <div>
-            <p className="eyebrow" style={{ color: "var(--amber)" }}>JCB Loadalls · Backhoes · Excavators · Dozers · Low beds</p>
-            <h1 style={{ marginTop: ".8rem" }}>Heavy iron<br />for Ghana&apos;s<br /><em>working ground.</em></h1>
-            <p className="lede">RINAMAS hires out serviced heavy-duty machines, JCB first and Caterpillar where the job calls for it, to contractors, estate developers, quarries and road crews across Ghana. Operator, fuel plan and low-bed haulage can all go on one contract, mobilised from our yard off the N1 Highway in Accra.</p>
+            <p className="hero-brand">RINAMAS</p>
+            <h1 className="hero-title">Equipment &amp; Trading <em>Enterprise</em></h1>
+            <p className="hero-sub">Heavy-machine hire, haulage and operators for Ghana&apos;s working ground.</p>
             <div className="cta">
               <a className="btn btn-accent" href="#quote">Request a quote</a>
-              <a className="btn btn-ghost" href="#fleet">See the fleet &amp; rates</a>
+              <a className="btn btn-ghost" href="#fleet">See all machines</a>
             </div>
+            <ul className="hero-badges" aria-label="How we work">
+              <li>Written quote within the working day</li>
+              <li>Deposit by MoMo or bank transfer</li>
+              <li>With or without operator and fuel</li>
+            </ul>
+            <p className="lede">Excavators, bulldozers, pile drivers, backhoes, loaders, tipper trucks and more, JCB first and Caterpillar where the job calls for it. Serviced machines for contractors, estate developers, quarries and road crews across Ghana, mobilised on our own low beds from the yard off the N1 Highway, Accra.</p>
           </div>
-          <div className="hero-art"><img src="/img/hero-loadall.jpg" alt="JCB 527-58 Loadall telehandler with bucket lowered, ready to work" width={1600} height={931} /></div>
+          <div className="hero-art"><Image src="/img/hero-loadall.jpg" alt="JCB 527-58 Loadall telehandler with bucket lowered, ready to work" width={1600} height={931} priority sizes="(max-width: 860px) 100vw, 45vw" /></div>
         </div>
       </section>
+      <MachineTypes classes={machines.length} />
       <div className="stripe" aria-hidden="true" />
       <section className="stats" aria-label="At a glance">
         <div className="wrap">
@@ -58,27 +69,36 @@ export default async function Home() {
             <h2 style={{ marginTop: ".5rem" }}>What&apos;s on the yard</h2>
             <p className="lede">Every class below hires out with or without operator, by the day or by the month. Rates are indicative day rates in Ghana cedis, exclusive of fuel and VAT. Availability shifts weekly, so confirm before you mobilise.</p>
           </div></div>
-          <Fleet machines={machines} />
-          <p className="note">Rates shown are starting day rates for a standard 8-hour shift, machine only, serviced and insured. Fuel, operator, overtime and low-bed mobilisation are quoted separately. Long-term hire from 4 weeks attracts a discount of 10 to 20 percent. No hire for unlicensed or illegal mining.</p>
+          <Fleet machines={machines} showPrices={pricing.showPrices} />
+          <p className="note pricing-note"><b>{pricing.showPrices ? "About these rates." : "About pricing."}</b> {pricing.note}{reviewed ? ` Rates last reviewed ${reviewed}${pricing.usdRate ? ` at GH₵ ${pricing.usdRate} to the dollar` : ""}.` : ""}</p>
+          <p className="note">Fuel, operator, overtime and low-bed mobilisation are quoted separately. Long-term hire from 4 weeks attracts a discount of 10 to 20 percent. No hire for unlicensed or illegal mining.</p>
         </div>
       </section>
 
       <section className="band band-surface" id="rates">
         <div className="wrap">
           <div className="head"><div>
-            <p className="eyebrow">Rate card</p>
-            <h2 style={{ marginTop: ".5rem" }}>Day, week or month</h2>
-            <p className="lede">Rates scale down the longer you keep the machine. Figures are indicative in Ghana cedis and confirmed on the quote.</p>
+            <p className="eyebrow">{pricing.showPrices ? "Rate card" : "How we price"}</p>
+            <h2 style={{ marginTop: ".5rem" }}>{pricing.showPrices ? "Day, week or month" : "Today's rate, on one call"}</h2>
+            <p className="lede">{pricing.showPrices ? "Rates scale down the longer you keep the machine. Figures are indicative in Ghana cedis and confirmed on the written quote." : "Machine costs follow the dollar, so we quote each job at the day's rate rather than publish numbers that go stale. Tell dispatch the machine, dates and site and you get a written quote the same working day."}</p>
           </div></div>
-          <div className="tablewrap">
+          {!pricing.showPrices && (
+            <div className="price-call">
+              <div><b>Call dispatch</b><a href={`tel:${DISPATCH_PHONE.tel}`}>{DISPATCH_PHONE.display}</a></div>
+              <div><b>WhatsApp</b><a href={waLink(wa, WA_GREETING)} target="_blank" rel="noopener">{DISPATCH_PHONE.display}</a></div>
+              <div><b>Or online</b><a href="#quote">Request a written quote →</a></div>
+            </div>
+          )}
+          {pricing.showPrices && <p className="swipe-hint">Swipe the table for week and month rates →</p>}
+          {pricing.showPrices && <div className="tablewrap">
             <table>
               <thead><tr><th>Machine class</th><th>Day (8 h)</th><th>Week (6 days)</th><th>Month (26 days)</th><th>Operator / day</th></tr></thead>
               <tbody>
                 {machines.map((m) => (
                   <tr key={m.id}>
                     <td>{m.name}</td>
-                    <td className="num">{ghs(m.dayRate)}{m.rateUnit === "trip" ? " / trip" : ""}</td>
-                    {m.rateUnit === "trip"
+                    <td className="num">{m.priceOnRequest ? "On request" : `${ghs(m.dayRate)}${m.rateUnit === "trip" ? " / trip" : ""}`}</td>
+                    {m.priceOnRequest ? <td className="num" colSpan={2}>Quoted per job after a site call</td> : m.rateUnit === "trip"
                       ? <td className="num" colSpan={2}>Outside Greater Accra: GH₵ 18 per km, loaded</td>
                       : <><td className="num">{week(m.dayRate)}</td><td className="num">{month(m.dayRate)}</td></>}
                     <td className="num">{m.operatorRate ? ghs(m.operatorRate) : "Included"}</td>
@@ -86,7 +106,7 @@ export default async function Home() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </div>}
           <div className="incl">
             <div><b>Included in every hire</b><ul><li>Scheduled servicing, logged by hour meter</li><li>Comprehensive insurance and site induction papers</li><li>Standby replacement if a unit goes down for more than 24 hours</li><li>Pre-start checks and PPE for crewed hires</li></ul></div>
             <div><b>Quoted separately</b><ul><li>Diesel, if you hire with fuel; delivered to site and billed on metered hours</li><li>Operator, with overtime after 8 hours at 1.5×</li><li>Low-bed mobilisation to and from site</li><li>Attachments: breaker, ripper, long-reach boom</li></ul></div>
@@ -113,7 +133,7 @@ export default async function Home() {
             <h2 style={{ marginTop: ".5rem" }}>One yard, nationwide reach</h2>
             <p className="lede">Every machine mobilises from our yard off the N1 Highway in Accra. Greater Accra trips are a flat rate; beyond that, mobilisation is charged per loaded kilometre.</p>
           </div></div>
-          <figure className="photo-band"><img src="/img/ghana.jpg" alt="Excavator on drainage works in Ghana" loading="lazy" width={1600} height={1067} /><figcaption>Excavator on drainage works, Ghana</figcaption></figure>
+          <figure className="photo-band"><Image src="/img/ghana.jpg" alt="Excavator on drainage works in Ghana" width={1600} height={1067} sizes="(max-width: 1180px) 100vw, 1180px" /><figcaption>Excavator on drainage works, Ghana</figcaption></figure>
           <div className="cover">
             <div className="regions">
               {REGIONS.map(([r, towns]) => <div className="region" key={r}><span className="dot" /><div><b>{r}</b><span>{towns}</span></div></div>)}

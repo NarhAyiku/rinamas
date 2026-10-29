@@ -19,6 +19,7 @@ model Machine {
   rateUnit      String   @default("day") // day | trip
   operatorRate  Int?     // GHS per day, null = included
   available     Boolean  @default(true)
+  priceOnRequest Boolean @default(false) // hide the rate for this machine, quote by call
   sortOrder     Int      @default(0)
   quotes        QuoteRequest[]
   createdAt     DateTime @default(now())
@@ -103,4 +104,11 @@ model ActivityLog {
   targetId   String?
   summary    String
   createdAt  DateTime @default(now())
+}
+
+// Key/value site settings editable from the admin (pricing display, notes).
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }

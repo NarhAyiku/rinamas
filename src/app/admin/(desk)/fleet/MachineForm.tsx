@@ -5,7 +5,7 @@ import { CATEGORIES } from "@/lib/format";
 
 export type MachineFormData = {
   id: string; name: string; slug: string; category: string; categoryLabel: string; dayRate: number; rateUnit: string;
-  operatorRate: number | null; sortOrder: number; image: string; specsText: string; available: boolean;
+  operatorRate: number | null; sortOrder: number; image: string; specsText: string; available: boolean; priceOnRequest: boolean;
 };
 
 const MAX_MB = 5;
@@ -46,6 +46,7 @@ export function MachineForm({ m }: { m?: MachineFormData }) {
       {state?.ok && <p className="ok" role="status">{state.ok}</p>}
       <div className="row-form">
         <label style={{ display: "flex", gap: ".4rem", alignItems: "center" }}><input type="checkbox" name="available" defaultChecked={m?.available ?? true} /> Available for hire</label>
+        <label style={{ display: "flex", gap: ".4rem", alignItems: "center" }}><input type="checkbox" name="priceOnRequest" defaultChecked={m?.priceOnRequest ?? false} /> Price on request (hide the rate)</label>
         <button className="btn btn-accent btn-sm" type="submit" disabled={pending}>{pending ? "Saving…" : m ? "Save changes" : "Add machine"}</button>
       </div>
     </form>

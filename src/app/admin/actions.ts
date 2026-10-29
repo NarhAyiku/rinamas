@@ -8,6 +8,7 @@ import { hashPassword, verifyPassword } from "@/lib/password";
 import { logActivity } from "@/lib/activity";
 import { ALL_STATUSES, STATUS_LABEL, ghs } from "@/lib/format";
 import { storePhoto } from "@/lib/upload";
+import { getPricing, setPricing } from "@/lib/settings";
 
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const num = (fd: FormData, k: string) => { const v = str(fd, k); return v === "" ? null : Number(v); };
@@ -129,6 +130,7 @@ const machineSchema = z.object({
   rateUnit: z.enum(["day", "trip"]),
   operatorRate: z.union([z.literal(""), z.coerce.number().int().min(0)]),
   available: z.coerce.boolean(),
+  priceOnRequest: z.coerce.boolean(),
   sortOrder: z.coerce.number().int(),
 });
 
@@ -141,7 +143,7 @@ export async function saveMachine(_prev: MachineFormState, fd: FormData): Promis
   const raw = Object.fromEntries(fd.entries());
   const specs = String(raw.specs ?? "").split("\n").map((l) => l.split(":")).filter((p) => p.length >= 2)
     .map(([k, ...v]) => [k.trim(), v.join(":").trim()]);
-  const parsed = machineSchema.safeParse({ ...raw, specs: JSON.stringify(specs), available: raw.available === "on" });
+  const parsed = machineSchema.safeParse({ ...raw, specs: JSON.stringify(specs), available: raw.available === "on", priceOnRequest: raw.priceOnRequest === "on" });
   if (!parsed.success) {
     const i = parsed.error.issues[0];
     return { error: `${i?.path?.[0] ? String(i.path[0]) + ": " : ""}${i?.message ?? "Check the machine details."}` };
@@ -164,6 +166,7 @@ export async function saveMachine(_prev: MachineFormState, fd: FormData): Promis
       if (before && before.dayRate !== data.dayRate) diffs.push(`rate ${ghs(before.dayRate)} → ${ghs(data.dayRate)}`);
       if (before && before.name !== data.name) diffs.push(`renamed from "${before.name}"`);
       if (before && before.available !== data.available) diffs.push(data.available ? "marked available" : "marked on hire");
+      if (before && before.priceOnRequest !== data.priceOnRequest) diffs.push(data.priceOnRequest ? "price hidden (on request)" : "price shown");
       if (before && before.image !== data.image) diffs.push("photo replaced");
       await logActivity(s, "machine.save", `${data.name}: ${diffs.length ? diffs.join(", ") : "details edited"}`, { type: "machine", id });
     } else {
@@ -246,4 +249,26 @@ export async function changeOwnPassword(_prev: { error?: string; ok?: string } |
   await prisma.staff.update({ where: { id: s.id }, data: { passwordHash: hashPassword(next) } });
   await logActivity(s, "staff.password", `${s.name} changed their own password`, { type: "staff", id: s.id });
   return { ok: "Password changed." };
+}
+
+/* ---------- pricing display ---------- */
+export async function savePricing(_prev: { error?: string; ok?: string } | undefined, fd: FormData) {
+  const s = await requireSession();
+  const showPrices = str(fd, "showPrices") === "true";
+  const note = str(fd, "note").slice(0, 600);
+  const reviewedAt = str(fd, "reviewedAt");
+  const usdRate = str(fd, "usdRate");
+  if (reviewedAt && !/^\d{4}-\d{2}-\d{2}$/.test(reviewedAt)) return { error: "Review date must be a valid date." };
+  if (usdRate && !(Number(usdRate) > 0)) return { error: "GH₵ per US$ must be a positive number." };
+  if (note.length < 20) return { error: "Write a pricing note of at least 20 characters; customers read it." };
+  const before = await getPricing();
+  await setPricing({ showPrices, note, reviewedAt: reviewedAt || null, usdRate: usdRate || null });
+  const diffs: string[] = [];
+  if (before.showPrices !== showPrices) diffs.push(showPrices ? "rates now shown on site" : "rates hidden, price on request");
+  if (before.note !== note) diffs.push("pricing note edited");
+  if ((before.reviewedAt ?? "") !== reviewedAt) diffs.push(`reviewed date → ${reviewedAt || "cleared"}`);
+  if ((before.usdRate ?? "") !== usdRate) diffs.push(`USD rate → ${usdRate || "cleared"}`);
+  if (diffs.length) await logActivity(s, "pricing.save", diffs.join(", "));
+  revalidatePath("/"); revalidatePath("/admin/pricing");
+  return { ok: "Pricing display saved." };
 }

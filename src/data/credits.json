@@ -118,5 +118,37 @@
     "artist": "Huhu Uet",
     "license": "CC BY 3.0",
     "page": "https://commons.wikimedia.org/wiki/File:JCB_527-58_Agri_Loadall_01.jpg"
+  },
+  {
+    "key": "piledriver",
+    "label": "Pile driver",
+    "title": "Caterpillar 385C L with Junttan pile driver (owner Cofra) p1.JPG",
+    "artist": "AlfvanBeem",
+    "license": "CC0",
+    "page": "https://commons.wikimedia.org/wiki/File:Caterpillar_385C_L_with_Junttan_pile_driver_(owner_Cofra)_p1.JPG"
+  },
+  {
+    "key": "exc20jcb",
+    "label": "JCB excavator",
+    "title": "2023-02-20, JCB JS220LC tracked excavator, Veže Brezovec construction site, Dolný Kubín, Slovakia.jpg",
+    "artist": "Oto Zapletal",
+    "license": "CC BY 4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:2023-02-20,_JCB_JS220LC_tracked_excavator,_Ve%C5%BEe_Brezovec_construction_site,_Doln%C3%BD_Kub%C3%ADn,_Slovakia.jpg"
+  },
+  {
+    "key": "loaderjcb",
+    "label": "JCB wheel loader",
+    "title": "Radlader JCB 426 E.jpg",
+    "artist": "Fiver, der Hellseher",
+    "license": "CC BY-SA 4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Radlader_JCB_426_E.jpg"
+  },
+  {
+    "key": "backhoejcb",
+    "label": "JCB backhoe",
+    "title": "Moscow, JCB 3CX July 2026 01.jpg",
+    "artist": "Retired electrician",
+    "license": "CC0",
+    "page": "https://commons.wikimedia.org/wiki/File:Moscow,_JCB_3CX_July_2026_01.jpg"
   }
 ]

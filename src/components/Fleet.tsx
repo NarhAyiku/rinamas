@@ -1,14 +1,23 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 import { CATEGORIES, ghs, parseSpecs } from "@/lib/format";
 
 export type MachineCard = {
   id: string; slug: string; name: string; category: string; categoryLabel: string;
-  image: string; specs: string; dayRate: number; rateUnit: string; available: boolean;
+  image: string; specs: string; dayRate: number; rateUnit: string; available: boolean; priceOnRequest: boolean;
 };
 
-export function Fleet({ machines }: { machines: MachineCard[] }) {
+export function Fleet({ machines, showPrices = true }: { machines: MachineCard[]; showPrices?: boolean }) {
   const [filter, setFilter] = useState("all");
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as HTMLElement).closest<HTMLAnchorElement>("a[data-filter]");
+      if (a?.dataset.filter) setFilter(a.dataset.filter);
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
   const shown = machines.filter((m) => filter === "all" || m.category === filter);
 
   function pick(m: MachineCard) {
@@ -29,7 +38,7 @@ export function Fleet({ machines }: { machines: MachineCard[] }) {
         {shown.map((m) => (
           <article className="machine" key={m.id} onClick={() => pick(m)} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") pick(m); }} aria-label={`${m.name}, add to quote`}>
             <div className="art">
-              <img src={m.image} alt={m.name} loading="lazy" width={1000} height={750} />
+              <Image src={m.image} alt={m.name} fill sizes="(max-width: 640px) 50vw, (max-width: 1100px) 33vw, 290px" style={{ objectFit: "cover" }} />
               {!m.available && <span className="unavailable">On hire · ask for dates</span>}
             </div>
             <div className="body">
@@ -41,11 +50,18 @@ export function Fleet({ machines }: { machines: MachineCard[] }) {
                 ))}
               </dl>
               <div className="rate">
-                <div>
-                  <span className="from">From, per {m.rateUnit === "trip" ? "trip (Greater Accra)" : "day"}</span><br />
-                  <b>{ghs(m.dayRate)}</b>
-                </div>
-                <button type="button" onClick={(e) => { e.stopPropagation(); pick(m); }}>Add to quote →</button>
+                {showPrices && !m.priceOnRequest ? (
+                  <div>
+                    <span className="from"><span className="long">{m.rateUnit === "trip" ? "From, per trip · Greater Accra" : "From, per day · machine only"}</span><span className="short">{m.rateUnit === "trip" ? "From / trip, Accra" : "From / day"}</span></span><br />
+                    <b>{ghs(m.dayRate)}</b>
+                  </div>
+                ) : (
+                  <div>
+                    <span className="from">Per {m.rateUnit === "trip" ? "trip" : "day"}</span><br />
+                    <b className="por">{m.priceOnRequest ? "Quoted per job" : "Price on request"}</b>
+                  </div>
+                )}
+                <button type="button" onClick={(e) => { e.stopPropagation(); pick(m); }}>{showPrices && !m.priceOnRequest ? "Add to quote →" : "Get today's rate →"}</button>
               </div>
             </div>
           </article>

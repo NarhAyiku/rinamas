@@ -8,6 +8,7 @@ export function AdminNav({ isSuper }: { isSuper: boolean }) {
     <nav className="admin-nav wrap" aria-label="Admin sections">
       <a href="/admin" aria-current={cur("/admin")}>Requests</a>
       <a href="/admin/fleet" aria-current={cur("/admin/fleet")}>Fleet &amp; rates</a>
+      <a href="/admin/pricing" aria-current={cur("/admin/pricing")}>Pricing</a>
       {isSuper && <a href="/admin/activity" aria-current={cur("/admin/activity")}>Activity</a>}
       {isSuper && <a href="/admin/staff" aria-current={cur("/admin/staff")}>Staff</a>}
       <a href="/admin/account" aria-current={cur("/admin/account")}>My account</a>
