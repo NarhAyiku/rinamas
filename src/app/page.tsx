@@ -10,6 +10,8 @@ import { StickyBar } from "@/components/StickyBar";
 import { MachineTypes } from "@/components/MachineTypes";
 import Image from "next/image";
 import { fmtReviewed, getPricing } from "@/lib/settings";
+import { buildRateTable, loadZones } from "@/lib/rates";
+import { ladder } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -21,11 +23,16 @@ const REGIONS: [string, string][] = [
 ];
 
 export default async function Home() {
-  const [machines, pricing] = await Promise.all([prisma.machine.findMany({ orderBy: [{ available: "desc" }, { sortOrder: "asc" }] }), getPricing()]);
+  const [machines, pricing, zones] = await Promise.all([
+    prisma.machine.findMany({ where: { hidden: false }, orderBy: [{ available: "desc" }, { sortOrder: "asc" }] }),
+    getPricing(),
+    loadZones(),
+  ]);
   const wa = whatsappNumber();
   const reviewed = fmtReviewed(pricing.reviewedAt);
-  const week = (d: number) => ghs(d * 6 * 0.9);
-  const month = (d: number) => ghs(d * 26 * 0.8);
+  const rates = buildRateTable(machines, zones, pricing);
+  const lad = (d: number) => ladder(d, pricing);
+  const lastZone = zones[zones.length - 1];
 
   return (
     <>
@@ -33,25 +40,19 @@ export default async function Home() {
       <section className="hero" id="top">
         <div className="hero-glow" aria-hidden="true" />
         <div className="wrap">
-          <div>
-            <p className="hero-brand">RINAMAS</p>
-            <h1 className="hero-title">Equipment &amp; Trading <em>Enterprise</em></h1>
-            <p className="hero-sub">Heavy-machine hire, haulage and operators for Ghana&apos;s working ground.</p>
+          <div className="hero-copy">
+            <h1 className="hero-name"><span className="n1">RINAMAS</span><span className="n2">Equipment &amp;&nbsp;Trading Enterprise</span></h1>
+            <p className="hero-sub">Heavy-machine hire, haulage and operators across Ghana. JCB first.</p>
             <div className="cta">
               <a className="btn btn-accent" href="#quote">Request a quote</a>
-              <a className="btn btn-ghost" href="#fleet">See all machines</a>
+              <a className="btn btn-ghost" href={`tel:${DISPATCH_PHONE.tel}`}>Call {DISPATCH_PHONE.display}</a>
+              <a className="btn btn-wa" href={waLink(wa, WA_GREETING)} target="_blank" rel="noopener">WhatsApp</a>
             </div>
-            <ul className="hero-badges" aria-label="How we work">
-              <li>Written quote within the working day</li>
-              <li>Deposit by MoMo or bank transfer</li>
-              <li>With or without operator and fuel</li>
-            </ul>
-            <p className="lede">Excavators, bulldozers, pile drivers, backhoes, loaders, tipper trucks and more, JCB first and Caterpillar where the job calls for it. Serviced machines for contractors, estate developers, quarries and road crews across Ghana, mobilised on our own low beds from the yard off the N1 Highway, Accra.</p>
           </div>
           <div className="hero-art"><Image src="/img/hero-loadall.jpg" alt="JCB 527-58 Loadall telehandler with bucket lowered, ready to work" width={1600} height={931} priority sizes="(max-width: 860px) 100vw, 45vw" /></div>
         </div>
       </section>
-      <MachineTypes classes={machines.length} />
+      <MachineTypes />
       <div className="stripe" aria-hidden="true" />
       <section className="stats" aria-label="At a glance">
         <div className="wrap">
@@ -71,7 +72,7 @@ export default async function Home() {
           </div></div>
           <Fleet machines={machines} showPrices={pricing.showPrices} />
           <p className="note pricing-note"><b>{pricing.showPrices ? "About these rates." : "About pricing."}</b> {pricing.note}{reviewed ? ` Rates last reviewed ${reviewed}${pricing.usdRate ? ` at GH₵ ${pricing.usdRate} to the dollar` : ""}.` : ""}</p>
-          <p className="note">Fuel, operator, overtime and low-bed mobilisation are quoted separately. Long-term hire from 4 weeks attracts a discount of 10 to 20 percent. No hire for unlicensed or illegal mining.</p>
+          <p className="note">Fuel, operator, overtime and low-bed mobilisation are quoted separately. A week is {pricing.weekDays} days at {pricing.weekDiscountPct}% off and a month is {pricing.monthDays} days at {pricing.monthDiscountPct}% off; the cheaper option is applied automatically. No hire for unlicensed or illegal mining.</p>
         </div>
       </section>
 
@@ -92,24 +93,36 @@ export default async function Home() {
           {pricing.showPrices && <p className="swipe-hint">Swipe the table for week and month rates →</p>}
           {pricing.showPrices && <div className="tablewrap">
             <table>
-              <thead><tr><th>Machine class</th><th>Day (8 h)</th><th>Week (6 days)</th><th>Month (26 days)</th><th>Operator / day</th></tr></thead>
+              <thead><tr><th>Machine class</th><th>Day ({pricing.dayHours} h)</th><th>Week ({pricing.weekDays} days)</th><th>Month ({pricing.monthDays} days)</th><th>Operator / day</th></tr></thead>
               <tbody>
                 {machines.map((m) => (
                   <tr key={m.id}>
                     <td>{m.name}</td>
                     <td className="num">{m.priceOnRequest ? "On request" : `${ghs(m.dayRate)}${m.rateUnit === "trip" ? " / trip" : ""}`}</td>
                     {m.priceOnRequest ? <td className="num" colSpan={2}>Quoted per job after a site call</td> : m.rateUnit === "trip"
-                      ? <td className="num" colSpan={2}>Outside Greater Accra: GH₵ 18 per km, loaded</td>
-                      : <><td className="num">{week(m.dayRate)}</td><td className="num">{month(m.dayRate)}</td></>}
+                      ? <td className="num" colSpan={2}>{zones.length ? `${zones.map((z) => `Zone ${z.name} ${ghs(z.lowBedEachWay)}`).join(" · ")} each way` : "Priced by distance from the yard"}</td>
+                      : <><td className="num">{ghs(lad(m.dayRate).week)}</td><td className="num">{ghs(lad(m.dayRate).month)}</td></>}
                     <td className="num">{m.operatorRate ? ghs(m.operatorRate) : "Included"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>}
+          {pricing.showPrices && zones.length > 0 && (
+            <div className="zone-strip">
+              <h3>Low bed to your site, each way</h3>
+              <p className="hint" style={{ margin: 0 }}>Tracked machines travel on our low bed from the N1 yard. Delivery and collection are each one trip, so a job pays this twice.</p>
+              <ul>
+                {zones.map((z) => (
+                  <li key={z.id}><b>Zone {z.name}</b><span>within {z.maxKm} km · {z.towns}</span><em>{ghs(z.lowBedEachWay)}</em></li>
+                ))}
+                <li><b>Further</b><span>beyond {lastZone?.maxKm ?? 120} km · Kumasi, Takoradi, Ho, Tamale</span><em>{ghs(pricing.perKmBeyond)} / km, quoted</em></li>
+              </ul>
+            </div>
+          )}
           <div className="incl">
             <div><b>Included in every hire</b><ul><li>Scheduled servicing, logged by hour meter</li><li>Comprehensive insurance and site induction papers</li><li>Standby replacement if a unit goes down for more than 24 hours</li><li>Pre-start checks and PPE for crewed hires</li></ul></div>
-            <div><b>Quoted separately</b><ul><li>Diesel, if you hire with fuel; delivered to site and billed on metered hours</li><li>Operator, with overtime after 8 hours at 1.5×</li><li>Low-bed mobilisation to and from site</li><li>Attachments: breaker, ripper, long-reach boom</li></ul></div>
+            <div><b>Quoted separately</b><ul><li>Diesel, if you hire with fuel; delivered to site and billed on metered hours</li><li>Operator, with overtime after {pricing.dayHours} hours at 1.5×</li><li>Low-bed mobilisation to and from site, priced by zone</li><li>Attachments: breaker, ripper, long-reach boom</li></ul></div>
           </div>
         </div>
       </section>
@@ -163,7 +176,7 @@ export default async function Home() {
               <div className="contact-row"><span className="lbl">Yard</span><a className="code" href={MAPS_URL} target="_blank" rel="noopener">Off N1 Highway, George Walker Bush Motorway, Accra ↗</a></div>
             </div>
           </div>
-          <QuoteForm machines={machines.map((m) => ({ id: m.id, name: m.name }))} />
+          <QuoteForm machines={machines.map((m) => ({ id: m.id, name: m.name }))} rates={rates} />
         </div>
       </section>
 
@@ -174,7 +187,8 @@ export default async function Home() {
             <details className="q"><summary>Who pays for diesel?</summary><p>Your choice on the quote form. Hire with fuel and RINAMAS delivers diesel to site and bills it against the metered hours. Hire without fuel and the machine leaves the yard with a full tank, you buy diesel on site, and it comes back full or the difference is billed at pump price.</p></details>
             <details className="q"><summary>Do I have to take an operator?</summary><p>No. You can hire machine only if your operator holds a valid Ghanaian heavy-duty licence and signs our pre-start checklist. Operator hire is recommended for excavators above 20T and cranes.</p></details>
             <details className="q"><summary>How much deposit, and how do I pay?</summary><p>50 percent of the quoted hire, by MTN MoMo, bank transfer or cheque for registered companies. The balance is settled against the signed hour log at the end of each week.</p></details>
-            <details className="q"><summary>What counts as a day?</summary><p>One shift of 8 metered hours. Hours beyond that are charged pro rata, and operator overtime runs at 1.5× after 8 hours.</p></details>
+            <details className="q"><summary>What counts as a day?</summary><p>One shift of {pricing.dayHours} metered hours. Hours beyond that are charged pro rata, operator overtime runs at 1.5× after {pricing.dayHours} hours, and standby on site is {pricing.standbyPct}% of the day rate.</p></details>
+            <details className="q"><summary>Why does distance change the price?</summary><p>Tracked machines reach your site on our low bed, which is priced by zone from the N1 yard: a job in Tema or Kasoa costs less to deliver than one in Ada or Koforidua. The machine&apos;s day rate is the same everywhere. The estimate in the quote form shows the transport line separately so you can see it.</p></details>
             <details className="q"><summary>What if the machine breaks down?</summary><p>Minor faults are fixed on site by our mechanic. If a unit is down for more than 24 hours we send a replacement from the yard and the down time is not charged.</p></details>
             <details className="q"><summary>Do you hire for mining?</summary><p>Only for licensed operations with Minerals Commission papers. We do not hire for galamsey or any unlicensed mining, and machines found at such sites are recovered immediately.</p></details>
           </div>

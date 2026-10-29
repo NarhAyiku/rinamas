@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { randomBytes, scryptSync } from "node:crypto";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
 const prisma = new PrismaClient();
 
 function hashPassword(password) {
@@ -7,42 +9,30 @@ function hashPassword(password) {
   return `scrypt$${salt}$${scryptSync(password, salt, 64).toString("hex")}`;
 }
 
-const machines = [
-  { slug: "lowbed", name: "Low bed trailer, 60T", category: "haul", categoryLabel: "Haulage · Mobilisation", image: "/img/lowbed-jcb.jpg", dayRate: 2800, rateUnit: "trip", operatorRate: null,
-    specs: [["Payload", "60 T"], ["Deck", "3-axle · 3.0 m wide"], ["Tractor", "6×4 prime mover"], ["Best for", "Moving excavators, dozers"]] },
-  { slug: "excavator-20t", name: "JCB excavator, 20T class", category: "earth", categoryLabel: "Earthmoving · Trenching", image: "/img/exc20-jcb.jpg", dayRate: 8500, operatorRate: 500,
-    specs: [["Operating weight", "20–22 T"], ["Bucket", "0.9–1.0 m³"], ["Dig depth", "6.7 m"], ["Best for", "Foundations, drains, bulk dig"]] },
-  { slug: "excavator-30t", name: "Heavy excavator, 30T+", category: "earth", categoryLabel: "Earthmoving · Mass excavation", image: "/img/exc30.jpg", dayRate: 12000, operatorRate: 600,
-    specs: [["Operating weight", "30–36 T"], ["Bucket", "1.4–1.6 m³"], ["Options", "Long reach, breaker"], ["Best for", "Quarry, mass cut, demolition"]] },
-  { slug: "mini-excavator", name: "Mini excavator, 3T", category: "earth", categoryLabel: "Earthmoving · Tight access", image: "/img/mini.jpg", dayRate: 4500, operatorRate: 350,
-    specs: [["Operating weight", "2.5–3.5 T"], ["Bucket", "0.1 m³"], ["Width", "1.5 m"], ["Best for", "Gutters, septic, house plots"]] },
-  { slug: "backhoe", name: "Backhoe loader", category: "earth", categoryLabel: "Earthmoving · Utilities", image: "/img/backhoe.jpg", dayRate: 3500, operatorRate: 350,
-    specs: [["Operating weight", "8 T"], ["Rear bucket", "0.3 m³"], ["Front loader", "1.0 m³"], ["Best for", "Trenches, backfill, site tidy"]] },
-  { slug: "bulldozer-d6", name: "Bulldozer, D6 class", category: "earth", categoryLabel: "Earthmoving · Clearing", image: "/img/dozer.jpg", dayRate: 9500, operatorRate: 500,
-    specs: [["Operating weight", "20–24 T"], ["Blade", "3.9 m · 5.6 m³"], ["Options", "Ripper"], ["Best for", "Bush clearing, cut & fill"]] },
-  { slug: "wheel-loader", name: "JCB wheel loader", category: "lift", categoryLabel: "Loading · Material handling", image: "/img/loader-jcb.jpg", dayRate: 7000, operatorRate: 450,
-    specs: [["Operating weight", "18–20 T"], ["Bucket", "3.0–3.5 m³"], ["Tip load", "12 T"], ["Best for", "Stockpiles, quarry load-out"]] },
-  { slug: "motor-grader", name: "Motor grader", category: "road", categoryLabel: "Road · Finishing grade", image: "/img/grader.jpg", dayRate: 8000, operatorRate: 500,
-    specs: [["Operating weight", "14–16 T"], ["Blade", "3.7 m moldboard"], ["Engine", "135 kW"], ["Best for", "Feeder roads, estate roads"]] },
-  { slug: "roller-10t", name: "Vibratory roller, 10T", category: "road", categoryLabel: "Road · Compaction", image: "/img/roller.jpg", dayRate: 4000, operatorRate: 350,
-    specs: [["Operating weight", "10–12 T"], ["Drum", "2.1 m smooth · padfoot"], ["Centrifugal force", "260 kN"], ["Best for", "Sub-base, laterite fill"]] },
-  { slug: "tipper", name: "Tipper truck, 10 m³", category: "haul", categoryLabel: "Haulage · Spoil & aggregate", image: "/img/tipper.jpg", dayRate: 2500, operatorRate: null,
-    specs: [["Body", "10 m³ · 15 T"], ["Drive", "6×4"], ["Minimum", "Full day"], ["Best for", "Spoil removal, chippings"]] },
-  { slug: "pile-driver", name: "Piling rig / pile driver", category: "earth", categoryLabel: "Foundations · Piling", image: "/img/pile-driver.jpg", dayRate: 14000, operatorRate: 700, priceOnRequest: true,
-    specs: [["Type", "Hydraulic piling rig"], ["Pile depth", "Up to 20 m"], ["Crew", "Operator + banksman"], ["Best for", "Bored piles, sheet piling, bridge and high-rise foundations"]] },
-  { slug: "loadall", name: "JCB Loadall telehandler, 2.7T", category: "lift", categoryLabel: "Lifting · Telehandler", image: "/img/loadall.jpg", dayRate: 3800, operatorRate: 350,
-    specs: [["Lift capacity", "2.7 T"], ["Lift height", "5.8 m"], ["Attachments", "Forks, bucket, man basket"], ["Best for", "Blocks, roofing, pallets to height"]] },
-  { slug: "mobile-crane", name: "Mobile crane, 50T", category: "lift", categoryLabel: "Lifting · Steel & precast", image: "/img/crane.jpg", dayRate: 15000, operatorRate: 800,
-    specs: [["Capacity", "50 T"], ["Main boom", "40 m"], ["Crew", "Operator + rigger"], ["Best for", "Precast, steel erection"]] },
-  { slug: "water-tanker", name: "Water tanker, 10,000 L", category: "haul", categoryLabel: "Haulage · Dust control", image: "/img/tanker.jpg", dayRate: 2200, operatorRate: null,
-    specs: [["Capacity", "10,000 L"], ["Spray bar", "Rear, 6 m"], ["Drive", "6×4"], ["Best for", "Compaction water, dust"]] },
-];
+// The fleet lives in src/data/catalogue.json: one list for the seed, the public tiles and the admin Catalogue sync page.
+const machines = require("../src/data/catalogue.json");
 
 for (const [i, m] of machines.entries()) {
   const data = { ...m, specs: JSON.stringify(m.specs), rateUnit: m.rateUnit ?? "day", sortOrder: i, priceOnRequest: m.priceOnRequest ?? false };
   await prisma.machine.upsert({ where: { slug: m.slug }, update: data, create: data });
 }
 console.log(`Seeded ${machines.length} machines`);
+
+// Estimator inputs per machine: assumed diesel burn per 8-hour day, and units that drive themselves to site
+// (no low bed line). A catalogue entry may carry its own fuelLPerDay / selfDrive; these are the defaults by slug.
+const FUEL_L_PER_DAY = { "mini-excavator": 30, backhoe: 50, loadall: 40, "roller-10t": 50, "excavator-20t": 120, "excavator-30t": 180, "bulldozer-d6": 160, "wheel-loader": 110, "motor-grader": 100, "mobile-crane": 80, "pile-driver": 150 };
+const SELF_DRIVE = ["lowbed", "tipper", "water-tanker"];
+// catalogue.json now carries fuelLPerDay and selfDrive; this only fills blanks left by older rows.
+for (const [slug, fuelLPerDay] of Object.entries(FUEL_L_PER_DAY)) await prisma.machine.updateMany({ where: { slug, fuelLPerDay: null }, data: { fuelLPerDay } });
+await prisma.machine.updateMany({ where: { slug: { in: SELF_DRIVE } }, data: { selfDrive: true } });
+
+// Low bed transport zones, upserted by name. Prices in default-zones.json are placeholders the owner edits under Pricing.
+const defaultZones = require("./default-zones.json");
+for (const z of defaultZones.zones) {
+  const data = { label: z.label, towns: z.towns, maxKm: z.maxKm, lowBedEachWay: z.lowBedEachWay, sortOrder: z.sortOrder };
+  await prisma.zone.upsert({ where: { name: z.name }, update: data, create: { name: z.name, ...data } });
+}
+console.log(`Seeded ${defaultZones.zones.length} transport zones${defaultZones.assumed ? " (placeholder prices, owner to edit)" : ""}`);
 
 // Staff accounts. Passwords come from .env; existing accounts keep their password.
 const staff = [

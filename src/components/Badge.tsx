@@ -20,23 +20,28 @@ export function BadgeDefs() {
   );
 }
 
-export function Badge({ className = "mark" }: { className?: string }) {
+/** The hazard hex mark. The name is written next to it by `Brand`, so the tiny wordmark inside the hex is off by default. */
+export function Badge({ className = "mark", wordmark = false }: { className?: string; wordmark?: boolean }) {
   return (
     <svg className={className} aria-hidden="true" viewBox="0 0 72 64">
       <use href="#badge" />
-      <text x="36" y="36.5" textAnchor="middle" fontFamily="Big Shoulders Display,Impact,sans-serif" fontWeight="900" fontSize="13" letterSpacing="1" fill="#FFCD11">
-        RINAMAS
-      </text>
+      {wordmark && (
+        <text x="36" y="36.5" textAnchor="middle" fontFamily="Big Shoulders Display,Impact,sans-serif" fontWeight="900" fontSize="13" letterSpacing="1" fill="#FFCD11">
+          RINAMAS
+        </text>
+      )}
     </svg>
   );
 }
 
-export function Brand() {
+/** Two-line lockup: RINAMAS over Equipment & Trading Enterprise, both in the same ink so they read as one name. */
+export function Brand({ href = "/" }: { href?: string }) {
   return (
-    <a className="brand" href="/">
+    <a className="brand" href={href}>
       <Badge />
       <span className="name">
-        RINAMAS<small>Equipment &amp; Trading Enterprise</small>
+        <span className="n1">RINAMAS</span>
+        <span className="n2">Equipment &amp;&nbsp;Trading Enterprise</span>
       </span>
     </a>
   );

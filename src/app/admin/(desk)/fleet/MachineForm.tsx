@@ -6,6 +6,7 @@ import { CATEGORIES } from "@/lib/format";
 export type MachineFormData = {
   id: string; name: string; slug: string; category: string; categoryLabel: string; dayRate: number; rateUnit: string;
   operatorRate: number | null; sortOrder: number; image: string; specsText: string; available: boolean; priceOnRequest: boolean;
+  fuelLPerDay: number | null; selfDrive: boolean;
 };
 
 const MAX_MB = 5;
@@ -34,6 +35,7 @@ export function MachineForm({ m }: { m?: MachineFormData }) {
         <label className="f">Rate (GH₵)<input name="dayRate" type="number" min={0} defaultValue={m?.dayRate ?? 0} required /></label>
         <label className="f">Per<select name="rateUnit" defaultValue={m?.rateUnit ?? "day"}><option value="day">day</option><option value="trip">trip</option></select></label>
         <label className="f">Operator / day (blank = included)<input name="operatorRate" type="number" min={0} defaultValue={m?.operatorRate ?? ""} /></label>
+        <label className="f">Diesel L / day (blank = metered)<input name="fuelLPerDay" type="number" min={0} max={5000} defaultValue={m?.fuelLPerDay ?? ""} placeholder="e.g. 120" /></label>
         <label className="f">Sort order<input name="sortOrder" type="number" defaultValue={m?.sortOrder ?? 99} /></label>
       </div>
       <div className="inline-form">
@@ -47,6 +49,7 @@ export function MachineForm({ m }: { m?: MachineFormData }) {
       <div className="row-form">
         <label style={{ display: "flex", gap: ".4rem", alignItems: "center" }}><input type="checkbox" name="available" defaultChecked={m?.available ?? true} /> Available for hire</label>
         <label style={{ display: "flex", gap: ".4rem", alignItems: "center" }}><input type="checkbox" name="priceOnRequest" defaultChecked={m?.priceOnRequest ?? false} /> Price on request (hide the rate)</label>
+        <label style={{ display: "flex", gap: ".4rem", alignItems: "center" }} title="Tippers and the low bed drive to site: estimates skip the low bed transport line"><input type="checkbox" name="selfDrive" defaultChecked={m?.selfDrive ?? false} /> Drives itself to site (no low bed)</label>
         <button className="btn btn-accent btn-sm" type="submit" disabled={pending}>{pending ? "Saving…" : m ? "Save changes" : "Add machine"}</button>
       </div>
     </form>

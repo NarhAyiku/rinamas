@@ -11,7 +11,8 @@
     "db:seed": "node prisma/seed.mjs",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
-    "db:reset-staff": "node prisma/reset-staff.mjs"
+    "db:reset-staff": "node prisma/reset-staff.mjs",
+    "test": "node --test src/lib/pricing.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.14.0",

@@ -20,6 +20,9 @@ model Machine {
   operatorRate  Int?     // GHS per day, null = included
   available     Boolean  @default(true)
   priceOnRequest Boolean @default(false) // hide the rate for this machine, quote by call
+  hidden        Boolean  @default(false) // retired from the public site (catalogue sync); hire records keep pointing at it
+  fuelLPerDay   Int?     // assumed diesel burn per 8-hour day, for the estimator; null = billed on metered litres
+  selfDrive     Boolean  @default(false) // drives itself to site (tipper, low bed): no low bed transport line
   sortOrder     Int      @default(0)
   quotes        QuoteRequest[]
   createdAt     DateTime @default(now())
@@ -43,6 +46,13 @@ model QuoteRequest {
   notes       String?
   status      String   @default("new") // new | quoted | confirmed | on_hire | closed | lost
   adminNote   String?
+
+  // estimator inputs and the indicative figure shown to the customer (snapshot of lines and rules)
+  zoneId        String?
+  zone          Zone?    @relation(fields: [zoneId], references: [id])
+  days          Int?
+  estimateTotal Int?
+  estimateJson  String?
 
   // quote & money (GHS)
   quotedAmount   Int?
@@ -104,6 +114,21 @@ model ActivityLog {
   targetId   String?
   summary    String
   createdAt  DateTime @default(now())
+}
+
+// Low bed transport bands from the N1 yard: A/B/C by road distance. Never deleted, quotes reference them.
+model Zone {
+  id            String   @id @default(cuid())
+  name          String   @unique // A | B | C
+  label         String   // e.g. "Within 30 km of the yard"
+  towns         String   // e.g. "Madina, Adenta, Tema, Kasoa"
+  maxKm         Int
+  lowBedEachWay Int      // GHS, low bed one way from the yard
+  sortOrder     Int      @default(0)
+  active        Boolean  @default(true)
+  quotes        QuoteRequest[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 // Key/value site settings editable from the admin (pricing display, notes).

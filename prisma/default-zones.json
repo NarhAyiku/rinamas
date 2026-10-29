@@ -1,0 +1,9 @@
+{
+  "note": "Low bed transport bands by road distance from the N1/Achimota yard. Prices are PLACEHOLDERS assumed on 2026-10-29 from market comparison, not RINAMAS costs: the owner must replace them under Admin > Pricing > Zones. Used by prisma/seed.mjs and the 'Seed default zones' button.",
+  "assumed": true,
+  "zones": [
+    { "name": "A", "label": "Within 30 km of the yard", "towns": "Madina, Adenta, Tema, Kasoa", "maxKm": 30, "lowBedEachWay": 1500, "sortOrder": 0 },
+    { "name": "B", "label": "30 to 60 km", "towns": "Dodowa, Nsawam, Prampram, Winneba", "maxKm": 60, "lowBedEachWay": 2500, "sortOrder": 1 },
+    { "name": "C", "label": "60 to 120 km", "towns": "Koforidua, Akosombo, Ada", "maxKm": 120, "lowBedEachWay": 4000, "sortOrder": 2 }
+  ]
+}

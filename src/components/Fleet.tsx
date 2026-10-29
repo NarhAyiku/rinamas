@@ -13,7 +13,13 @@ export function Fleet({ machines, showPrices = true }: { machines: MachineCard[]
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       const a = (e.target as HTMLElement).closest<HTMLAnchorElement>("a[data-filter]");
-      if (a?.dataset.filter) setFilter(a.dataset.filter);
+      if (!a?.dataset.filter) return;
+      setFilter(a.dataset.filter);
+      // A type tile names the card it belongs to: scroll there once the filtered grid has rendered, else to the grid itself.
+      const slug = a.dataset.slug;
+      if (!slug) return;
+      e.preventDefault();
+      setTimeout(() => (document.getElementById(`m-${slug}`) ?? document.getElementById("fleet"))?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
     };
     document.addEventListener("click", onClick);
     return () => document.removeEventListener("click", onClick);
@@ -36,7 +42,7 @@ export function Fleet({ machines, showPrices = true }: { machines: MachineCard[]
       </div>
       <div className="fleet">
         {shown.map((m) => (
-          <article className="machine" key={m.id} onClick={() => pick(m)} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") pick(m); }} aria-label={`${m.name}, add to quote`}>
+          <article className="machine" id={`m-${m.slug}`} key={m.id} onClick={() => pick(m)} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") pick(m); }} aria-label={`${m.name}, add to quote`}>
             <div className="art">
               <Image src={m.image} alt={m.name} fill sizes="(max-width: 640px) 50vw, (max-width: 1100px) 33vw, 290px" style={{ objectFit: "cover" }} />
               {!m.available && <span className="unavailable">On hire · ask for dates</span>}

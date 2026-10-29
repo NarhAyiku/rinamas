@@ -1,5 +1,5 @@
 import { requireSession } from "@/lib/auth";
-import { BadgeDefs, Badge } from "@/components/Badge";
+import { BadgeDefs, Brand } from "@/components/Badge";
 import { AdminNav } from "@/components/AdminNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { logout } from "@/app/admin/actions";
@@ -12,7 +12,7 @@ export default async function DeskLayout({ children }: { children: React.ReactNo
       <BadgeDefs />
       <header className="admin-head">
         <div className="wrap admin-head-row">
-          <a className="brand" href="/admin"><Badge /><span className="name">RINAMAS<small>{isSuper ? "Management" : "Dispatch desk"}</small></span></a>
+          <div className="admin-brand"><Brand href="/admin" /><span className="pill pill-plain admin-desk">{isSuper ? "Management" : "Dispatch desk"}</span></div>
           <div className="admin-user">
             <span className="who"><b>{session.name}</b><small>{isSuper ? "Super admin" : "Admin"}</small></span>
             <ThemeToggle />
