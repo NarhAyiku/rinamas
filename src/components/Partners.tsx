@@ -19,18 +19,21 @@ export function Partners() {
         </div></div>
         <ul className="partners">
           {list.map((p) => (
-            <li className="partner" key={p.url}>
-              <div className="partner-logo">
-                {p.logo
-                  ? <Image src={p.logo} alt={p.name} fill sizes="(max-width: 640px) 80vw, 260px" />
-                  : <span className="partner-word">{p.name}</span>}
-              </div>
-              <div className="partner-body">
-                <span className="partner-rel">{RELATION[p.relation] ?? "Partner"}</span>
-                <h3>{p.name}</h3>
-                <p>{p.blurb}</p>
-                <a href={p.url} target="_blank" rel="noopener">Visit {p.name} ↗</a>
-              </div>
+            <li key={p.url}>
+              {/* The whole card is the link; its name is the company name (opens their site in a new tab). */}
+              <a className="partner" href={p.url} target="_blank" rel="noopener">
+                <span className="partner-logo">
+                  {p.logo
+                    ? <Image src={p.logo} alt="" fill sizes="(max-width: 640px) 80vw, 260px" />
+                    : <span className="partner-word" aria-hidden="true">{p.name}</span>}
+                </span>
+                <span className="partner-body">
+                  <span className="partner-rel">{RELATION[p.relation] ?? "Partner"}</span>
+                  <span className="partner-name">{p.name}<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11L11 5M6 4.5h5.5V10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+                  <span className="partner-blurb">{p.blurb}</span>
+                  <span className="partner-host">{new URL(p.url).hostname.replace(/^www\./, "")}</span>
+                </span>
+              </a>
             </li>
           ))}
         </ul>

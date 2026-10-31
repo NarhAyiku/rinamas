@@ -24,11 +24,15 @@ export function EstimateLines({ est }: { est: EstimateOk }) {
   );
 }
 
-export function QuoteForm({ machines, rates }: { machines: Opt[]; rates?: RateTable }) {
+/** The quote request form. On the page the visitor picks a machine; in the machine pop-up `fixedMachine` sets it and
+ *  `idPrefix` keeps the element ids unique, since both forms are on the page at once. */
+export function QuoteForm({ machines, rates, fixedMachine, idPrefix = "" }: { machines: Opt[]; rates?: RateTable; fixedMachine?: Opt; idPrefix?: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [machineId, setMachineId] = useState("");
+  const [pickedId, setMachineId] = useState("");
+  const machineId = fixedMachine?.id ?? pickedId;
+  const id = (name: string) => idPrefix + name;
   const [days, setDays] = useState("1");
   const [zoneId, setZoneId] = useState("");
   const [operator, setOperator] = useState<"with" | "without">("with");
@@ -67,17 +71,19 @@ export function QuoteForm({ machines, rates }: { machines: Opt[]; rates?: RateTa
 
   return (
     <form className="card" onSubmit={onSubmit}>
-      <label className="f full">Machine
-        <select id="machine" name="machineId" required defaultValue="" onChange={syncMachine} onFocus={syncMachine}>
-          <option value="" disabled>Choose a machine class</option>
-          {machines.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-          <option value="other">Something else</option>
-        </select>
-      </label>
-      <label className="f">Start date<input id="start" name="startDate" type="date" min={today} required /></label>
+      {fixedMachine ? <input type="hidden" name="machineId" value={fixedMachine.id} /> : (
+        <label className="f full">Machine
+          <select id={id("machine")} name="machineId" required defaultValue="" onChange={syncMachine} onFocus={syncMachine}>
+            <option value="" disabled>Choose a machine class</option>
+            {machines.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+            <option value="other">Something else</option>
+          </select>
+        </label>
+      )}
+      <label className="f">Start date<input id={id("start")} name="startDate" type="date" min={today} required /></label>
       <div className="f" style={{ display: "grid", gap: ".3rem" }}>
         <label className="f">How many days
-          <input id="days" name="days" type="number" inputMode="numeric" min={1} max={365} step={1} value={days} onChange={(e) => setDays(e.target.value)} required />
+          <input id={id("days")} name="days" type="number" inputMode="numeric" min={1} max={365} step={1} value={days} onChange={(e) => setDays(e.target.value)} required />
         </label>
         <div className="day-chips" aria-label="Common durations">
           {chips.map(([label, n]) => <button key={label} type="button" className="chip" aria-pressed={Number(days) === n} onClick={() => setDays(String(n))}>{label}{n > 1 ? ` · ${n}` : ""}</button>)}
@@ -85,13 +91,13 @@ export function QuoteForm({ machines, rates }: { machines: Opt[]; rates?: RateTa
       </div>
       {rates && rates.zones.length > 0 && (
         <label className="f full">How far from our N1 yard, Accra
-          <select id="zone" name="zoneId" value={zoneId} onChange={(e) => setZoneId(e.target.value)}>
+          <select id={id("zone")} name="zoneId" value={zoneId} onChange={(e) => setZoneId(e.target.value)}>
             {rates.zones.map((z) => <option key={z.id} value={z.id}>Zone {z.name} · {z.label.charAt(0).toLowerCase() + z.label.slice(1)} · {z.towns}</option>)}
             <option value="">Further away / not sure</option>
           </select>
         </label>
       )}
-      <label className="f full">Site location<input id="site" name="site" type="text" placeholder="e.g. Oyibi, near the Valley View junction" required /></label>
+      <label className="f full">Site location<input id={id("site")} name="site" type="text" placeholder="e.g. Oyibi, near the Valley View junction" required /></label>
       <div className="full radio" role="radiogroup" aria-label="Operator">
         <span>Operator</span>
         <label><input type="radio" name="operator" value="with" checked={operator === "with"} onChange={() => setOperator("with")} /> With operator</label>
@@ -124,9 +130,9 @@ export function QuoteForm({ machines, rates }: { machines: Opt[]; rates?: RateTa
         </div>
       )}
 
-      <label className="f">Your name<input id="name" name="name" type="text" required /></label>
-      <label className="f">Your phone<input id="phone" name="phone" type="tel" placeholder="024 000 0000" required /></label>
-      <label className="f full">Job notes<textarea id="notes" name="notes" placeholder="What the machine will do, ground conditions, access for the low bed" /></label>
+      <label className="f">Your name<input id={id("name")} name="name" type="text" required /></label>
+      <label className="f">Your phone<input id={id("phone")} name="phone" type="tel" placeholder="024 000 0000" required /></label>
+      <label className="f full">Job notes<textarea id={id("notes")} name="notes" placeholder="What the machine will do, ground conditions, access for the low bed" /></label>
       {error && <p className="full err" role="alert">{error}</p>}
       <div className="full"><button className="btn btn-accent" type="submit" disabled={busy} style={{ width: "100%" }}>{busy ? "Sending…" : "Send quote request"}</button></div>
     </form>

@@ -9,6 +9,8 @@ import { CopyButton } from "@/components/CopyButton";
 import { StickyBar } from "@/components/StickyBar";
 import { MachineTypes } from "@/components/MachineTypes";
 import { Partners } from "@/components/Partners";
+import { MachineDialog } from "@/components/MachineDialog";
+import type { MachineCard } from "@/components/Fleet";
 import Image from "next/image";
 import { fmtReviewed, getPricing } from "@/lib/settings";
 import { buildRateTable, loadZones } from "@/lib/rates";
@@ -34,6 +36,12 @@ export default async function Home() {
   const rates = buildRateTable(machines, zones, pricing);
   const lad = (d: number) => ladder(d, pricing);
   const lastZone = zones[zones.length - 1];
+  // Only what the cards and pop-up need goes to the browser; with prices hidden no rate leaves the server.
+  const cards: MachineCard[] = machines.map((m) => ({
+    id: m.id, slug: m.slug, name: m.name, category: m.category, categoryLabel: m.categoryLabel, image: m.image, specs: m.specs,
+    rateUnit: m.rateUnit, available: m.available, priceOnRequest: m.priceOnRequest, selfDrive: m.selfDrive,
+    dayRate: pricing.showPrices ? m.dayRate : 0, operatorRate: pricing.showPrices ? m.operatorRate : null,
+  }));
 
   return (
     <>
@@ -71,7 +79,7 @@ export default async function Home() {
             <h2 style={{ marginTop: ".5rem" }}>What&apos;s on the yard</h2>
             <p className="lede">Every machine below comes with or without an operator, by the day, week or month: you choose. {pricing.showPrices ? "Rates shown are guide day rates in Ghana cedis for the machine alone." : "Tap any machine and we'll send you today's rate for your job."} Tap a card to check dates and add it to your request.</p>
           </div></div>
-          <Fleet machines={machines} showPrices={pricing.showPrices} />
+          <Fleet machines={cards} showPrices={pricing.showPrices} />
           <p className="note pricing-note"><b>{pricing.showPrices ? "About these rates." : "About pricing."}</b> {pricing.note}{reviewed ? ` Rates last reviewed ${reviewed}${pricing.usdRate ? ` at GH₵ ${pricing.usdRate} to the dollar` : ""}.` : ""}</p>
           <p className="note">Longer hires cost less per day: a week is {pricing.weekDays} days at {pricing.weekDiscountPct}% off and a month is {pricing.monthDays} days at {pricing.monthDiscountPct}% off, and you always get whichever works out cheaper. Operator, fuel and transport are yours to add or leave out.</p>
         </div>
@@ -199,6 +207,7 @@ export default async function Home() {
       </section>
       <Footer />
       <StickyBar wa={wa} />
+      <MachineDialog machines={cards} rates={rates} wa={wa} />
     </>
   );
 }

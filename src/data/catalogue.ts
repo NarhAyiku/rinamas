@@ -27,12 +27,13 @@ export type CatalogueMachine = {
 
 export const CATALOGUE: CatalogueMachine[] = (raw as Omit<CatalogueMachine, "sortOrder">[]).map((m, i) => ({ ...m, sortOrder: i }));
 
-/** The landing-page type picker: one photo tile per kind of machine. `slug` is the fleet card the tile scrolls to. */
-export type MachineType = { label: string; filter: "earth" | "haul" | "road" | "lift"; slug: string; image: string; objectPosition?: string };
+/** The landing-page type picker: one photo tile per kind of machine. `slug` is the machine the pop-up opens on;
+ *  `slugs` lists every size of that kind, shown as tabs in the pop-up (defaults to just `slug`). */
+export type MachineType = { label: string; filter: "earth" | "haul" | "road" | "lift"; slug: string; slugs?: string[]; image: string; objectPosition?: string };
 export const MACHINE_TYPES: MachineType[] = [
   { label: "Payloaders", filter: "lift", slug: "wheel-loader", image: "/img/loader-jcb.jpg", objectPosition: "50% 60%" },
-  { label: "Loaders", filter: "earth", slug: "backhoe", image: "/img/backhoe.jpg", objectPosition: "50% 60%" },
-  { label: "Excavators", filter: "earth", slug: "excavator-20t", image: "/img/exc20-jcb.jpg" },
+  { label: "Loaders", filter: "earth", slug: "backhoe", slugs: ["backhoe", "wheel-loader"], image: "/img/backhoe.jpg", objectPosition: "50% 60%" },
+  { label: "Excavators", filter: "earth", slug: "excavator-20t", slugs: ["mini-excavator", "excavator-20t", "excavator-30t"], image: "/img/exc20-jcb.jpg" },
   { label: "Bulldozers", filter: "earth", slug: "bulldozer-d6", image: "/img/dozer.jpg" },
   { label: "Backhoes", filter: "earth", slug: "backhoe", image: "/img/backhoe-jcb.jpg", objectPosition: "50% 65%" },
   { label: "Graders", filter: "road", slug: "motor-grader", image: "/img/grader.jpg" },
@@ -43,6 +44,9 @@ export const MACHINE_TYPES: MachineType[] = [
   { label: "Low beds", filter: "haul", slug: "lowbed", image: "/img/lowbed-jcb.jpg", objectPosition: "50% 60%" },
   { label: "Telehandlers", filter: "lift", slug: "loadall", image: "/img/loadall.jpg", objectPosition: "50% 60%" },
 ];
+
+/** Every size of the kind a machine belongs to, for the pop-up tabs: the excavators together, else the machine alone. */
+export const groupOf = (slug: string) => MACHINE_TYPES.find((t) => (t.slugs?.length ?? 0) > 1 && t.slugs!.includes(slug))?.slugs ?? [slug];
 
 /* ---------- catalogue sync: comparing a catalogue entry with the database row ---------- */
 

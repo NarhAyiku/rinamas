@@ -1,37 +1,21 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { CATEGORIES, ghs, parseSpecs } from "@/lib/format";
+import { openMachine } from "./MachineDialog";
 
+/** What the browser gets for each machine. With prices hidden the page zeroes dayRate and operatorRate before sending. */
 export type MachineCard = {
   id: string; slug: string; name: string; category: string; categoryLabel: string;
-  image: string; specs: string; dayRate: number; rateUnit: string; available: boolean; priceOnRequest: boolean;
+  image: string; specs: string; dayRate: number; rateUnit: string; operatorRate: number | null;
+  available: boolean; priceOnRequest: boolean; selfDrive: boolean;
 };
 
 export function Fleet({ machines, showPrices = true }: { machines: MachineCard[]; showPrices?: boolean }) {
   const [filter, setFilter] = useState("all");
-  useEffect(() => {
-    const onClick = (e: MouseEvent) => {
-      const a = (e.target as HTMLElement).closest<HTMLAnchorElement>("a[data-filter]");
-      if (!a?.dataset.filter) return;
-      setFilter(a.dataset.filter);
-      // A type tile names the card it belongs to: scroll there once the filtered grid has rendered, else to the grid itself.
-      const slug = a.dataset.slug;
-      if (!slug) return;
-      e.preventDefault();
-      setTimeout(() => (document.getElementById(`m-${slug}`) ?? document.getElementById("fleet"))?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
-    };
-    document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
-  }, []);
   const shown = machines.filter((m) => filter === "all" || m.category === filter);
-
-  function pick(m: MachineCard) {
-    const sel = document.getElementById("machine") as HTMLSelectElement | null;
-    if (sel) sel.value = m.id;
-    document.getElementById("quote")?.scrollIntoView({ behavior: "smooth" });
-    setTimeout(() => sel?.focus(), 400);
-  }
+  // A card opens the machine pop-up: big photo, every detail, and a request form for that machine.
+  const pick = (m: MachineCard) => openMachine(m.slug);
 
   return (
     <>
@@ -42,7 +26,7 @@ export function Fleet({ machines, showPrices = true }: { machines: MachineCard[]
       </div>
       <div className="fleet">
         {shown.map((m) => (
-          <article className="machine" id={`m-${m.slug}`} key={m.id} onClick={() => pick(m)} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") pick(m); }} aria-label={`${m.name}, add to quote`}>
+          <article className="machine" id={`m-${m.slug}`} key={m.id} onClick={() => pick(m)} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") pick(m); }} aria-label={`${m.name}, see details and request`}>
             <div className="art">
               <Image src={m.image} alt={m.name} fill sizes="(max-width: 640px) 50vw, (max-width: 1100px) 33vw, 290px" style={{ objectFit: "cover" }} />
               {!m.available && <span className="unavailable">On hire · ask for dates</span>}
@@ -67,7 +51,7 @@ export function Fleet({ machines, showPrices = true }: { machines: MachineCard[]
                     <b className="por">{m.priceOnRequest ? "Quoted per job" : "Price on request"}</b>
                   </div>
                 )}
-                <button type="button" onClick={(e) => { e.stopPropagation(); pick(m); }}>{showPrices && !m.priceOnRequest ? "Add to quote →" : "Get today's rate →"}</button>
+                <button type="button" onClick={(e) => { e.stopPropagation(); pick(m); }}>{showPrices && !m.priceOnRequest ? "Details & quote →" : "Get today's rate →"}</button>
               </div>
             </div>
           </article>
