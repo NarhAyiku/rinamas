@@ -11,3 +11,7 @@ prisma/*.db-journal
 .env*
 .env*.local
 .next-build
+
+# local only
+CLAUDE.md
+*.tsbuildinfo

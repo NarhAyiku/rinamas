@@ -1,53 +1,64 @@
-# RINAMAS Equipment & Trading
+<div align="center">
 
-Website and dispatch desk for RINAMAS Equipment and Trading Enterprise, a heavy-equipment hire business in Accra, Ghana.
+<img src="public/brand/rinamas-badge.svg" alt="RINAMAS" width="96">
 
-## What it does
+# RINAMAS Equipment &amp; Trading Enterprise
 
-- Public site: fleet spec sheet with GH₵ rates, rate card, how hire works, coverage, FAQ.
-- Quote request form: saved to the database with a reference number, then a one-tap WhatsApp handoff to dispatch.
-- Dispatch desk at `/admin` for front-desk staff: triage requests, reply on WhatsApp, and keep one hire record per job the way Ghanaian plant-hire desks run it: quote and deposit, site agent, dispatch with hour-meter reading and condition, a daily hour and standby log signed off by the site agent, return with meter and condition, then close.
-- Super admin (management) sees everything admins see, plus an activity log of every sign-in and change any staff member makes, and manages staff accounts.
-- Customers can revisit their reference page (`/quote/<id>`) to see the job's progress.
-- Installable as a PWA on phones (manifest, icons, light service worker); phones also get a sticky WhatsApp / Call / Quote bar.
+**Heavy-machine hire, haulage and operators across Ghana. JCB first.**
 
-## Run locally
+[**rinamas.com**](https://rinamas.com) &nbsp;·&nbsp; [WhatsApp 024 351 8749](https://wa.me/233243518749) &nbsp;·&nbsp; [Request a quote](https://rinamas.com/#quote)
+
+<br>
+
+<img src=".github/readme/hero.jpg" alt="RINAMAS website: hero with a JCB Loadall and the machines we hire" width="100%">
+
+</div>
+
+## What we hire
+
+<img src=".github/readme/machines.jpg" alt="Excavators, payloaders, loaders, bulldozers, backhoes, graders, rollers, cranes, piling rigs, tippers, low beds and telehandlers" width="100%">
+
+Excavators from 3 T to 30 T+, payloaders and wheel loaders, bulldozers, backhoes, motor graders, rollers, mobile cranes, piling rigs, telehandlers, tipper trucks and a 60 T low bed. With or without an operator, by the day, week or month, delivered from our yard off the N1 in Accra to sites across Ghana.
+
+<img src=".github/readme/fleet.jpg" alt="Spec sheet for every machine on the yard" width="100%">
+
+## Built for the phone in your pocket
+
+<img src=".github/readme/phones.jpg" alt="The RINAMAS site on a phone: home, machine picker and quote form" width="100%">
+
+Pick a machine, choose your dates and site, and send a request in under a minute. You get a reference number, a page that tracks your hire, and a one-tap WhatsApp line to dispatch.
+
+## Companies we work with
+
+<img src=".github/readme/partners.jpg" alt="Koppan Hospitality and David Walter Limited" width="100%">
+
+<br>
+
+<details>
+<summary><b>Under the hood</b> (for developers)</summary>
+
+<br>
+
+The public site and the dispatch desk are one Next.js app.
+
+| | |
+|---|---|
+| **Customers** | Fleet spec sheet, rate card or "today's rate" mode, live estimate on the quote form, a tracking page per request |
+| **Dispatch desk** (`/admin`) | One hire record per job: quote, deposit, dispatch and return with meter readings, daily hour log, payments, final bill worked out from the log |
+| **Management** | Finance (collected, billed, owed, CSV export), pricing rules and transport zones, staff accounts, full activity log, AI fill from a machine photo |
+| **Stack** | Next.js 15, React 19, Prisma 6 on Postgres, Zod, Vercel (Blob for photos, AI Gateway) |
 
 ```bash
-cp .env.example .env     # then set ADMIN_PASSWORD and SESSION_SECRET
+cp .env.example .env    # set the passwords and SESSION_SECRET
 npm install
-createdb rinamas         # local Postgres (brew install postgresql@17 && brew services start postgresql@17)
-npm run db:push          # creates the tables
-npm run db:seed          # loads the 12 machine classes
-npm run dev              # http://localhost:3000
+createdb rinamas        # local Postgres
+npm run db:push && npm run db:seed
+npm run dev             # http://localhost:3000, desk at /admin
+npm test                # pricing and settlement tests
 ```
 
-Admin: http://localhost:3000/admin. The seed creates two accounts from `.env`: `ceo` (super admin, `SUPERADMIN_PASSWORD`) and `frontdesk` (admin, `ADMIN_PASSWORD`). Create more under Staff once signed in as the super admin.
+</details>
 
-## Deploy
+<br>
 
-Works on any Node host (Vercel, Railway, Render, a VPS). Set the env vars from `.env.example`. Point `DATABASE_URL` at a managed Postgres, then run `npx prisma db push` and `npm run db:seed` once. Production lives on Vercel at rinamas.com (domain registered at Hostinger, DNS points at Vercel).
-
-## Stack
-
-Next.js 15 (App Router, server actions), React 19, Prisma 6 on Postgres, Zod validation. No CSS framework: design tokens live in `src/app/globals.css`.
-
-## Photos
-
-Admins upload machine photos under Fleet & rates. In production they go to the project's Vercel Blob store (private store, OIDC credentials, served through `/photos/...`); locally they are written to `public/img`.
-
-## Roles
-
-| | Admin (front desk) | Super admin |
-|---|---|---|
-| Requests, hire records, hour logs | yes | yes |
-| Fleet, rates, availability | yes | yes |
-| Delete a machine | no | yes |
-| Staff accounts, password resets | no | yes |
-| Activity log | own actions are recorded | sees everything |
-
-## Roadmap
-
-- Paystack deposit on confirmed quotes (behind `ENABLE_PAYSTACK`), with signed webhooks and an idempotency table.
-- SMS or WhatsApp Business API notification to dispatch on each new request.
-- Customer photo uploads for site access.
+<sub>Machine photos are from Wikimedia Commons contributors under CC BY and CC BY-SA licences, credited on <a href="https://rinamas.com">rinamas.com</a>, until our own photography replaces them. Partner logos belong to their owners. © RINAMAS Equipment &amp; Trading Enterprise. All rights reserved.</sub>
