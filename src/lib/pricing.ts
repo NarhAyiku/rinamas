@@ -128,7 +128,7 @@ export function estimate(input: EstimateInput): Estimate {
     basis = `${plural(trips, "loaded trip")}`;
     lines.push({ key: "hire", label: machine.name, detail: `${plural(trips, "trip")} × ${fmtGhs(machine.dayRate)} per loaded trip`, amount: round10(machine.dayRate * trips) });
     if (input.zone) notes.push(`Trip price covers ${input.zone.label.toLowerCase()} (Zone ${input.zone.name}); longer runs are quoted per km.`);
-    else notes.push("Trip price is quoted per route once dispatch knows the site.");
+    else notes.push("Trip price is set per route once you tell us the site.");
   } else {
     const h = hireCost(machine.dayRate, days, rules);
     basis = h.basis;
@@ -160,12 +160,12 @@ export function estimate(input: EstimateInput): Estimate {
   if (input.fuel) {
     if (!perTrip && machine.fuelLPerDay && rules.dieselPrice) {
       lines.push({ key: "fuel", label: "Diesel, delivered to site", detail: `about ${machine.fuelLPerDay} L/day × ${plural(days, "day")} at ${fmtGhs(rules.dieselPrice)}/L`, amount: round10(machine.fuelLPerDay * rules.dieselPrice * days) });
-      notes.push("Diesel is billed on metered litres; the figure here is an allowance.");
+      notes.push("Diesel is billed on the litres actually used; this figure is an allowance.");
     } else if (!perTrip) {
-      notes.push("Diesel is billed on metered litres at pump price, on top of this figure.");
+      notes.push("Diesel comes on top, on metered litres at pump price, for what the machine actually uses.");
     }
   } else if (!perTrip) {
-    notes.push("You supply diesel: the machine leaves the yard full and comes back full.");
+    notes.push("You fuel it yourself: it arrives with a full tank and goes back full.");
   }
 
   const subtotal = lines.reduce((a, l) => a + l.amount, 0);
@@ -173,12 +173,12 @@ export function estimate(input: EstimateInput): Estimate {
   const total = subtotal + vat;
   const deposit = round10(total * rules.depositPct / 100);
   if (rules.vatPct > 0 && rules.vatIncluded) notes.push(`Prices include VAT at ${rules.vatPct}%.`);
-  if (rules.vatPct === 0) notes.push("No VAT line while RINAMAS is not VAT registered.");
+  if (rules.vatPct === 0) notes.push("No VAT is added: RINAMAS is not VAT registered.");
   if (!perTrip) {
-    notes.push(`A day is ${rules.dayHours} metered hours; hours beyond that are pro rata, operator overtime at 1.5×.`);
-    notes.push(`Standby days (rain, waiting on site) at ${rules.standbyPct}% of the day rate.`);
+    notes.push(`A day is ${rules.dayHours} metered hours; longer days are pro rata, with operator overtime at 1.5×.`);
+    notes.push(`Standby days for rain or site delays are charged at ${rules.standbyPct}% of the day rate, not the full rate.`);
   }
-  notes.push("Indicative. Dispatch confirms the figure in writing and that written rate is fixed for your hire.");
+  notes.push("Indicative. Dispatch confirms the figure in writing; once you accept, that rate is locked for your whole hire.");
   return { ok: true, lines, subtotal, vat, total, deposit, basis, days, notes };
 }
 
@@ -190,7 +190,7 @@ export function estimateText(est: Estimate, ctx: { machineName: string; days: nu
   const out = [head, `${ctx.machineName} · ${plural(est.days, "day")} · ${where}`];
   for (const l of est.lines) out.push(`${l.label} (${l.detail}): ${fmtGhs(l.amount)}`);
   if (est.vat > 0) out.push(`VAT: ${fmtGhs(est.vat)}`);
-  out.push(`TOTAL ${fmtGhs(est.total)} indicative · deposit ${fmtGhs(est.deposit)} to lock the date`);
+  out.push(`TOTAL ${fmtGhs(est.total)} indicative · deposit ${fmtGhs(est.deposit)} to hold your date`);
   if (ctx.reviewedAt) out.push(`Rates reviewed ${ctx.reviewedAt}${ctx.usdRate ? ` at GH₵ ${ctx.usdRate} to the dollar` : ""}.`);
   for (const n of est.notes) out.push(`- ${n}`);
   return out.join("\n");

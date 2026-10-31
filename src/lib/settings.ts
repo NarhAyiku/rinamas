@@ -12,7 +12,7 @@ export type Pricing = Rules & {
 export const PRICING_DEFAULTS: Pricing = {
   ...DEFAULT_RULES,
   showPrices: true,
-  note: "Rates shown are indicative GH₵ day rates for an 8-hour shift, machine only; operator, fuel, low-bed mobilisation and standby are charged separately. Because our machines, parts and finance are dollar-based we review the rate card regularly, confirm the final rate in writing when you book, and that quoted rate is then fixed for your hire period.",
+  note: "Your written quote shows each line (machine, operator, fuel, transport), so you see exactly what you pay for and choose what to include. Once you accept it, your rate is locked for the whole hire, whatever the dollar does.",
   reviewedAt: null,
   usdRate: null,
 };

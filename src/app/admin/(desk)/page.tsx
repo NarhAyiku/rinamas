@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { ALL_STATUSES, STATUS_LABEL, fmtDate, ghs, intl, waLink } from "@/lib/format";
 import { getSession } from "@/lib/auth";
 import { QuoteStatusForm, StatusPill } from "@/components/StatusBits";
+import { balanceOf } from "@/lib/settle";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
     ...(q ? { OR: [{ reference: { contains: q } }, { name: { contains: q } }, { phone: { contains: q } }, { site: { contains: q } }, { machineName: { contains: q } }] } : {}),
   };
   const [quotes, counts] = await Promise.all([
-    prisma.quoteRequest.findMany({ where, orderBy: { createdAt: "desc" }, take: 200 }),
+    prisma.quoteRequest.findMany({ where, orderBy: { createdAt: "desc" }, take: 200, include: { payments: { select: { kind: true, amount: true } } } }),
     prisma.quoteRequest.groupBy({ by: ["status"], _count: { _all: true } }),
   ]);
   const count = (s: string) => counts.find((c) => c.status === s)?._count._all ?? 0;
@@ -54,6 +55,10 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
 
       <div className="reqs">
         {quotes.map((qr) => {
+          const bal = balanceOf(qr, qr.payments);
+          const money = qr.status === "closed" && qr.finalAmount == null ? { cls: "chip-owed", text: "No final bill" }
+            : qr.finalAmount != null ? (bal && bal > 0 ? { cls: "chip-owed", text: `Owes ${ghs(bal)}` } : bal && bal < 0 ? { cls: "chip-money", text: `Refund ${ghs(-bal)}` } : { cls: "chip-money", text: `Paid ${ghs(qr.finalAmount)}` })
+            : qr.quotedAmount ? { cls: "chip-money", text: `${ghs(qr.quotedAmount)}${qr.payments.length ? `, ${ghs(qr.quotedAmount - (bal ?? 0))} in` : ""}` } : null;
           const msg = `Hello ${qr.name}, RINAMAS dispatch here regarding your request ${qr.reference} for ${qr.machineName} from ${qr.startDate}.`;
           return (
             <article className={`req req-${qr.status}`} key={qr.id}>
@@ -75,7 +80,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
                 <div className="chips">
                   <span className="chip-s">{qr.operator === "with" ? "Wet hire · operator" : "Dry hire · machine only"}</span>
                   <span className="chip-s">{qr.fuel === "with" ? "Fuel by RINAMAS" : "Customer's fuel"}</span>
-                  {qr.quotedAmount ? <span className="chip-s chip-money">{ghs(qr.quotedAmount)}</span> : null}
+                  {money && <span className={`chip-s ${money.cls}`}>{money.text}</span>}
                 </div>
                 {qr.notes && <span className="muted note">“{qr.notes}”</span>}
               </div>

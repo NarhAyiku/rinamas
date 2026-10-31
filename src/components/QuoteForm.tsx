@@ -18,7 +18,7 @@ export function EstimateLines({ est }: { est: EstimateOk }) {
         {est.lines.map((l) => <div key={l.key}><dt><b>{l.label}</b><small>{l.detail}</small></dt><dd>{fmtGhs(l.amount)}</dd></div>)}
         {est.vat > 0 && <div><dt><b>VAT</b></dt><dd>{fmtGhs(est.vat)}</dd></div>}
       </dl>
-      <div className="est-total"><span>Indicative total</span><b>{fmtGhs(est.total)}</b><small>Deposit {fmtGhs(est.deposit)} to lock the unit and the date; balance against the signed hour log.</small></div>
+      <div className="est-total"><span>Estimated total</span><b>{fmtGhs(est.total)}</b><small>A deposit of {fmtGhs(est.deposit)} holds the machine and your date; the rest is settled against your signed hour log.</small></div>
       <ul className="est-notes">{est.notes.filter((n) => !n.startsWith("Indicative")).map((n) => <li key={n}>{n}</li>)}</ul>
     </>
   );
@@ -57,7 +57,7 @@ export function QuoteForm({ machines, rates }: { machines: Opt[]; rates?: RateTa
       if (!res.ok) { setError(data.error ?? "Something went wrong. Please try again or call dispatch."); setBusy(false); return; }
       router.push(`/quote/${data.id}`);
     } catch {
-      setError(`Could not reach the server. Check your connection or call ${DISPATCH_PHONE.display}.`);
+      setError(`We couldn't send that. Check your connection and try again, or call ${DISPATCH_PHONE.display}.`);
       setBusy(false);
     }
   }
@@ -102,23 +102,23 @@ export function QuoteForm({ machines, rates }: { machines: Opt[]; rates?: RateTa
         <label><input type="radio" name="fuel" value="with" checked={fuel === "with"} onChange={() => setFuel("with")} /> With fuel from RINAMAS</label>
         <label><input type="radio" name="fuel" value="without" checked={fuel === "without"} onChange={() => setFuel("without")} /> Without fuel, we buy our own</label>
       </div>
-      <p className="full hint">With fuel: diesel is delivered to site and billed on the metered hours. Without fuel: the machine arrives with a full tank, you fuel it on site and return it full.</p>
+      <p className="full hint">With fuel, we deliver diesel to site and bill it on the metered hours. Without fuel, the machine arrives with a full tank and you send it back full.</p>
 
       {rates && (
         <div className="estimate" aria-live="polite">
           <div className="estimate-head"><p className="eyebrow">Your estimate</p>{est?.ok && <span className="muted" style={{ fontSize: ".85rem" }}>{est.basis}{zoneId ? ` · Zone ${rates.zones.find((z) => z.id === zoneId)?.name}` : ""}</span>}</div>
           {!rates.showPrices ? (
-            <p className="est-empty"><b>Call dispatch for today&apos;s rate.</b> Machine costs follow the dollar, so we quote each job on the day: <a href={`tel:${DISPATCH_PHONE.tel}`}>{DISPATCH_PHONE.display}</a>, or send this form and we reply in writing within the working day.</p>
+            <p className="est-empty"><b>Today&apos;s rate. Your call.</b> Send this form and we&apos;ll reply with a written quote within the working day, or call <a href={`tel:${DISPATCH_PHONE.tel}`}>{DISPATCH_PHONE.display}</a> for a price now.</p>
           ) : !machineId ? (
-            <p className="est-empty">Pick a machine, your days and the zone to see an itemised indicative figure before you send.</p>
+            <p className="est-empty">Choose a machine, days and zone and you&apos;ll see an itemised estimate here before you send anything.</p>
           ) : machineId === "other" ? (
-            <p className="est-empty">Tell us what you need in the notes and dispatch quotes it per job.</p>
+            <p className="est-empty">Tell us what you need in the notes and we&apos;ll price it for your job.</p>
           ) : !est ? null : !est.ok ? (
-            <p className="est-empty"><b>{est.reason}.</b> Send the request and dispatch calls you back with a written figure.</p>
+            <p className="est-empty"><b>{est.reason}.</b> Send the request and we&apos;ll call you back with a written figure.</p>
           ) : (
             <>
               <EstimateLines est={est} />
-              <p className="est-disclaimer">Indicative estimate at rates{rates.reviewedAt ? ` reviewed ${fmtDay(rates.reviewedAt)}` : " on the current rate card"}{rates.usdRate ? `, GH₵ ${rates.usdRate} to the dollar` : ""}. Dispatch confirms the figure in writing and that written rate is fixed for your hire.</p>
+              <p className="est-disclaimer">A guide figure at rates{rates.reviewedAt ? ` reviewed ${fmtDay(rates.reviewedAt)}` : " on the current rate card"}{rates.usdRate ? `, GH₵ ${rates.usdRate} to the dollar` : ""}. Your written quote confirms it, and once you accept, that rate is locked for your whole hire.</p>
             </>
           )}
         </div>

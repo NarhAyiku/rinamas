@@ -6,14 +6,14 @@ export function StatusPill({ status }: { status: string }) {
 }
 
 /** Hire progress, shared by the customer's reference page and the admin hire record. */
-export function Timeline({ status, style }: { status: string; style?: React.CSSProperties }) {
+export function Timeline({ status, style, customer }: { status: string; style?: React.CSSProperties; customer?: boolean }) {
   const stepIdx = STATUSES.indexOf(status as (typeof STATUSES)[number]);
   return (
     <ol className="timeline" aria-label="Hire progress" style={style}>
       {STATUSES.map((s, i) => (
         <li key={s} className={i < stepIdx ? "done" : i === stepIdx ? "now" : ""}><b>{STATUS_LABEL[s]}</b><span>{STATUS_HINT[s]}</span></li>
       ))}
-      {status === "lost" && <li className="lost"><b>Lost</b><span>{STATUS_HINT.lost}</span></li>}
+      {status === "lost" && <li className="lost"><b>{customer ? "Not going ahead" : "Lost"}</b><span>{customer ? "This request is closed. Send a new one any time." : STATUS_HINT.lost}</span></li>}
     </ol>
   );
 }

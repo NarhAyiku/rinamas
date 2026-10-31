@@ -4,7 +4,7 @@ import { fmtDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
-const GROUPS: Record<string, string> = { "auth.": "Sign-ins", "quote.": "Requests & hires", "hourlog.": "Hour logs", "machine.": "Fleet", "staff.": "Staff" };
+const GROUPS: Record<string, string> = { "auth.": "Sign-ins", "quote.": "Requests & hires", "hourlog.": "Hour logs", "payment.": "Money", "machine.": "Fleet", "staff.": "Staff" };
 
 export default async function ActivityPage({ searchParams }: { searchParams: Promise<{ staff?: string; type?: string }> }) {
   const session = await requireSuper();

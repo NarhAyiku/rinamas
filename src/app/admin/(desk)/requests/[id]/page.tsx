@@ -2,32 +2,36 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { fmtDate, ghs, intl, waLink } from "@/lib/format";
 import { getSession } from "@/lib/auth";
-import { getPricing } from "@/lib/settings";
-import type { EstimateOk } from "@/lib/pricing";
+import { getPricing, rulesOf } from "@/lib/settings";
 import { QuoteStatusForm, StatusPill, Timeline } from "@/components/StatusBits";
-import { addHourLog, deleteHourLog, saveHire } from "@/app/admin/actions";
+import { addHourLog, deleteHourLog, deletePayment, saveHire } from "@/app/admin/actions";
+import { parseSnapshot, settlementFor } from "@/lib/money";
+import { PAYMENT_KINDS, PAYMENT_METHODS, balanceOf, billOf, paidTotal } from "@/lib/settle";
+import { FinalBillForm, PaymentForm } from "./MoneyForms";
 
 export const dynamic = "force-dynamic";
 
-/** What the API and the calculator store in estimateJson. */
-type Snapshot = EstimateOk & {
-  machineName?: string; zone?: { id: string; name: string; label: string; towns: string } | null; km?: number | null;
-  operator?: boolean; fuel?: boolean; reviewedAt?: string | null; usdRate?: string | null; computedAt?: string; source?: string; by?: string;
+const ERRORS: Record<string, string> = {
+  "close-needs-bill": "Set the final bill below before closing this job. Closing without one leaves the money out of the books.",
 };
-function parseSnapshot(json: string | null): Snapshot | null {
-  if (!json) return null;
-  try { const v = JSON.parse(json); return v && v.ok === true && Array.isArray(v.lines) ? (v as Snapshot) : null; } catch { return null; }
-}
 
-export default async function RequestPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function RequestPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string }> }) {
+  const [{ id }, { error }] = await Promise.all([params, searchParams]);
   const [session, q, pricing] = await Promise.all([
     getSession(),
-    prisma.quoteRequest.findUnique({ where: { id }, include: { hourLogs: { orderBy: { date: "asc" } }, machine: true, zone: true } }),
+    prisma.quoteRequest.findUnique({ where: { id }, include: { hourLogs: { orderBy: { date: "asc" } }, machine: true, zone: true, payments: { orderBy: [{ paidAt: "asc" }, { createdAt: "asc" }] } } }),
     getPricing(),
   ]);
   if (!q) notFound();
-  const activity = session?.role === "superadmin" ? await prisma.activityLog.findMany({ where: { targetType: "quote", targetId: id }, orderBy: { createdAt: "desc" }, take: 30 }) : [];
+  const isSuper = session?.role === "superadmin";
+  const settlement = settlementFor(q, rulesOf(pricing));
+  const finalSnap = (() => { try { return q.finalJson ? JSON.parse(q.finalJson) as { computedAt?: string } : null; } catch { return null; } })();
+  const paid = paidTotal(q.payments), bill = billOf(q), balance = balanceOf(q, q.payments);
+  const depositIn = q.payments.some((p) => p.kind === "deposit");
+  const suggestKind = !depositIn && q.finalAmount == null ? "deposit" : balance != null && balance < 0 ? "refund" : "balance";
+  const suggestAmount = suggestKind === "deposit" ? (q.depositAmount ? q.depositAmount - paid : null) : balance != null ? Math.abs(balance) : null;
+  const atReturn = q.status === "on_hire" || q.status === "closed" || !!q.returnDate;
+  const activity = isSuper ? await prisma.activityLog.findMany({ where: { targetType: "quote", targetId: id }, orderBy: { createdAt: "desc" }, take: 30 }) : [];
   const hours = q.hourLogs.reduce((a, l) => a + l.hours, 0), standby = q.hourLogs.reduce((a, l) => a + l.standby, 0), fuel = q.hourLogs.reduce((a, l) => a + l.fuelL, 0);
   const meterRun = q.dispatchMeter != null && q.returnMeter != null ? q.returnMeter - q.dispatchMeter : null;
   const msg = `Hello ${q.name}, RINAMAS dispatch here regarding your request ${q.reference} for ${q.machineName}.`;
@@ -53,6 +57,8 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
+      {error && ERRORS[error] && <p className="banner warn" role="alert">{ERRORS[error]} <a href="#money">Go to money</a></p>}
+
       <Timeline status={q.status} />
 
       <div className="grid-2">
@@ -75,10 +81,9 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
           <h3>Quote &amp; deposit</h3>
           <div className="inline-form">
             <label className="f">Quoted total (GH₵)<input name="quotedAmount" type="number" min={0} defaultValue={q.quotedAmount ?? ""} /></label>
-            <label className="f">Deposit (GH₵)<input name="depositAmount" type="number" min={0} defaultValue={q.depositAmount ?? ""} /></label>
-            <label className="f">Deposit paid on<input name="depositPaidAt" type="date" defaultValue={q.depositPaidAt ?? ""} /></label>
-            <label className="f">Method<select name="depositMethod" defaultValue={q.depositMethod ?? ""}><option value="">—</option><option value="momo">MoMo</option><option value="bank">Bank transfer</option><option value="cash">Cash</option><option value="cheque">Cheque</option></select></label>
+            <label className="f">Deposit required (GH₵)<input name="depositAmount" type="number" min={0} defaultValue={q.depositAmount ?? ""} /></label>
           </div>
+          <p className="hint" style={{ margin: 0 }}>Record the deposit when it arrives under <a href="#money">Money</a>.</p>
           <h3>Site agent</h3>
           <div className="inline-form">
             <label className="f">Name<input name="siteAgentName" defaultValue={q.siteAgentName ?? ""} placeholder="Who signs the daily log" /></label>
@@ -168,7 +173,71 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
         </form>
       </section>
 
-      {session?.role === "superadmin" && (
+      <section className="panel money" id="money" style={{ marginTop: "1.2rem" }}>
+        <div className="admin-top" style={{ marginBottom: ".8rem" }}><h3 style={{ margin: 0 }}>Money</h3></div>
+        <div className="money-sum">
+          <div><span>Quoted</span><b>{q.quotedAmount != null ? ghs(q.quotedAmount) : "—"}</b></div>
+          <div><span>Final bill</span><b>{q.finalAmount != null ? ghs(q.finalAmount) : "Not set"}</b>{q.finalSetBy && <small>{q.finalSetBy}{q.finalSetAt ? `, ${fmtDate(q.finalSetAt)}` : ""}</small>}</div>
+          <div><span>Received</span><b>{ghs(paid)}</b>{q.depositAmount ? <small>deposit required {ghs(q.depositAmount)}</small> : null}</div>
+          <div className={balance == null ? "" : balance > 0 ? "owed" : balance < 0 ? "refund" : "settled"}>
+            <span>{balance != null && balance < 0 ? "To refund" : "Balance due"}</span>
+            <b>{balance == null ? "—" : ghs(Math.abs(balance))}</b>
+            <small>{bill == null ? "nothing billed yet" : q.finalAmount != null ? "against the final bill" : "against the quote"}</small>
+          </div>
+        </div>
+
+        <div className="tablewrap" style={{ marginTop: "1rem" }}>
+          <table className="compact">
+            <thead><tr><th>Paid on</th><th>Payment</th><th>Method</th><th>Reference</th><th className="num">GH₵</th><th>Logged by</th>{isSuper && <th></th>}</tr></thead>
+            <tbody>
+              {q.payments.length === 0 && <tr><td colSpan={isSuper ? 7 : 6} className="muted">No money recorded yet. Record the deposit as soon as it lands.</td></tr>}
+              {q.payments.map((p) => (
+                <tr key={p.id}>
+                  <td className="num">{p.paidAt}</td>
+                  <td>{PAYMENT_KINDS[p.kind as keyof typeof PAYMENT_KINDS] ?? p.kind}{p.note && <span className="muted"> · {p.note}</span>}</td>
+                  <td>{PAYMENT_METHODS[p.method as keyof typeof PAYMENT_METHODS] ?? p.method}</td>
+                  <td className="muted">{p.reference}</td>
+                  <td className="num">{p.kind === "refund" ? "−" : ""}{p.amount.toLocaleString("en-GH")}</td>
+                  <td className="muted">{p.loggedBy}</td>
+                  {isSuper && <td><form action={deletePayment}><input type="hidden" name="id" value={p.id} /><button className="link danger" type="submit">Remove</button></form></td>}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <PaymentForm quoteId={q.id} suggestKind={suggestKind} suggestAmount={suggestAmount} />
+
+        <h3 style={{ marginTop: "1.6rem" }}>Final bill</h3>
+        {!atReturn && q.finalAmount == null ? (
+          <p className="muted">Set the final bill when the machine is back. The settlement below fills in from the dispatch and return dates and the hour log as they are entered.</p>
+        ) : null}
+        {settlement == null ? (
+          <p className="muted">No listed machine on this request, so there is no settlement to work out. Type the final bill.</p>
+        ) : !settlement.ok ? (
+          <p className="muted">Settlement: {settlement.reason}.</p>
+        ) : (
+          <>
+            <p className="muted" style={{ fontSize: ".9rem" }}>
+              Settlement from the record: {settlement.days.onHire} day{settlement.days.onHire === 1 ? "" : "s"} on hire {settlement.days.source === "dates" ? "(dispatch to return)" : settlement.days.source === "logs" ? "(from the hour log)" : "(from the request)"}
+              {settlement.days.standby ? `, ${settlement.days.standby} standby` : ""}{finalSnap?.computedAt && q.finalAmount === settlement.total ? " · applied as the final bill" : ""}
+            </p>
+            <div className="tablewrap" style={{ marginTop: ".6rem" }}>
+              <table className="compact">
+                <thead><tr><th>Line</th><th>How</th><th className="num">GH₵</th></tr></thead>
+                <tbody>
+                  {settlement.lines.map((l) => <tr key={l.key}><td>{l.label}</td><td className="muted">{l.detail}</td><td className="num">{l.amount.toLocaleString("en-GH")}</td></tr>)}
+                  {settlement.vat > 0 && <tr><td>VAT</td><td></td><td className="num">{settlement.vat.toLocaleString("en-GH")}</td></tr>}
+                  <tr><td><b>Settlement total</b></td><td className="muted">{q.quotedAmount != null ? `quoted ${ghs(q.quotedAmount)}${settlement.total !== q.quotedAmount ? `, ${settlement.total > q.quotedAmount ? "+" : "−"}${ghs(Math.abs(settlement.total - q.quotedAmount))}` : ""}` : ""}</td><td className="num"><b>{settlement.total.toLocaleString("en-GH")}</b></td></tr>
+                </tbody>
+              </table>
+            </div>
+            {settlement.notes.length > 0 && <ul className="est-notes" style={{ marginTop: ".6rem" }}>{settlement.notes.map((n) => <li key={n}>{n}</li>)}</ul>}
+          </>
+        )}
+        <FinalBillForm id={q.id} canSettle={!!settlement?.ok} settleTotal={settlement?.ok ? settlement.total : null} current={q.finalAmount} />
+      </section>
+
+      {isSuper && (
         <section className="panel" style={{ marginTop: "1.2rem" }}>
           <h3>Activity on this record</h3>
           <ul className="activity">

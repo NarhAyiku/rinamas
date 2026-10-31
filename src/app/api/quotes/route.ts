@@ -15,8 +15,8 @@ const schema = z.object({
   site: z.string().trim().min(3, "Tell us where the site is").max(200),
   operator: z.enum(["with", "without"]),
   fuel: z.enum(["with", "without"]),
-  name: z.string().trim().min(2, "Your name is needed").max(80),
-  phone: z.string().trim().regex(/^[+\d][\d\s-]{8,20}$/, "Enter a valid phone number"),
+  name: z.string().trim().min(2, "Tell us your name").max(80),
+  phone: z.string().trim().regex(/^[+\d][\d\s-]{8,20}$/, "Check your phone number so we can call you back"),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 
@@ -31,7 +31,7 @@ function limited(ip: string) {
 
 export async function POST(req: Request) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-  if (limited(ip)) return NextResponse.json({ error: "Too many requests. Please call dispatch instead." }, { status: 429 });
+  if (limited(ip)) return NextResponse.json({ error: "Lots of requests from this connection just now. Please call or WhatsApp dispatch instead." }, { status: 429 });
 
   let body: unknown;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Bad request" }, { status: 400 }); }

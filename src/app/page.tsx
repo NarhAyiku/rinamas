@@ -8,6 +8,7 @@ import { QuoteForm } from "@/components/QuoteForm";
 import { CopyButton } from "@/components/CopyButton";
 import { StickyBar } from "@/components/StickyBar";
 import { MachineTypes } from "@/components/MachineTypes";
+import { Partners } from "@/components/Partners";
 import Image from "next/image";
 import { fmtReviewed, getPricing } from "@/lib/settings";
 import { buildRateTable, loadZones } from "@/lib/rates";
@@ -58,7 +59,7 @@ export default async function Home() {
         <div className="wrap">
           <div className="stat"><b>{machines.length}</b><span>Machine classes on the yard</span></div>
           <div className="stat"><b>N1</b><span>Yard on the George Walker Bush Motorway</span></div>
-          <div className="stat"><b>24h</b><span>Dispatch on confirmed deposit</span></div>
+          <div className="stat"><b>24h</b><span>Usual delivery, Greater Accra</span></div>
           <div className="stat"><b>10</b><span>Regions served</span></div>
         </div>
       </section>
@@ -68,20 +69,20 @@ export default async function Home() {
           <div className="head"><div>
             <p className="eyebrow">Spec sheet</p>
             <h2 style={{ marginTop: ".5rem" }}>What&apos;s on the yard</h2>
-            <p className="lede">Every class below hires out with or without operator, by the day or by the month. Rates are indicative day rates in Ghana cedis, exclusive of fuel and VAT. Availability shifts weekly, so confirm before you mobilise.</p>
+            <p className="lede">Every machine below comes with or without an operator, by the day, week or month: you choose. {pricing.showPrices ? "Rates shown are guide day rates in Ghana cedis for the machine alone." : "Tap any machine and we'll send you today's rate for your job."} Tap a card to check dates and add it to your request.</p>
           </div></div>
           <Fleet machines={machines} showPrices={pricing.showPrices} />
           <p className="note pricing-note"><b>{pricing.showPrices ? "About these rates." : "About pricing."}</b> {pricing.note}{reviewed ? ` Rates last reviewed ${reviewed}${pricing.usdRate ? ` at GH₵ ${pricing.usdRate} to the dollar` : ""}.` : ""}</p>
-          <p className="note">Fuel, operator, overtime and low-bed mobilisation are quoted separately. A week is {pricing.weekDays} days at {pricing.weekDiscountPct}% off and a month is {pricing.monthDays} days at {pricing.monthDiscountPct}% off; the cheaper option is applied automatically. No hire for unlicensed or illegal mining.</p>
+          <p className="note">Longer hires cost less per day: a week is {pricing.weekDays} days at {pricing.weekDiscountPct}% off and a month is {pricing.monthDays} days at {pricing.monthDiscountPct}% off, and you always get whichever works out cheaper. Operator, fuel and transport are yours to add or leave out.</p>
         </div>
       </section>
 
       <section className="band band-surface" id="rates">
         <div className="wrap">
           <div className="head"><div>
-            <p className="eyebrow">{pricing.showPrices ? "Rate card" : "How we price"}</p>
-            <h2 style={{ marginTop: ".5rem" }}>{pricing.showPrices ? "Day, week or month" : "Today's rate, on one call"}</h2>
-            <p className="lede">{pricing.showPrices ? "Rates scale down the longer you keep the machine. Figures are indicative in Ghana cedis and confirmed on the written quote." : "Machine costs follow the dollar, so we quote each job at the day's rate rather than publish numbers that go stale. Tell dispatch the machine, dates and site and you get a written quote the same working day."}</p>
+            <p className="eyebrow">{pricing.showPrices ? "Rate card" : "Your rate"}</p>
+            <h2 style={{ marginTop: ".5rem" }}>{pricing.showPrices ? "Day, week or month" : "Today's rate. Your call."}</h2>
+            <p className="lede">{pricing.showPrices ? "The longer you keep the machine, the less you pay per day. These are guide figures in Ghana cedis; your written quote confirms them and locks your rate for the hire." : "You get a live price, never a stale one. Tell us the machine, dates and site and we'll send a written quote the same working day. Once you accept it, that rate is yours for the whole hire, even if the dollar moves."}</p>
           </div></div>
           {!pricing.showPrices && (
             <div className="price-call">
@@ -111,7 +112,7 @@ export default async function Home() {
           {pricing.showPrices && zones.length > 0 && (
             <div className="zone-strip">
               <h3>Low bed to your site, each way</h3>
-              <p className="hint" style={{ margin: 0 }}>Tracked machines travel on our low bed from the N1 yard. Delivery and collection are each one trip, so a job pays this twice.</p>
+              <p className="hint" style={{ margin: 0 }}>Tracked machines ride to your site on our low bed from the N1 yard. Prices are one way; delivery and collection are two trips, both shown in your estimate.</p>
               <ul>
                 {zones.map((z) => (
                   <li key={z.id}><b>Zone {z.name}</b><span>within {z.maxKm} km · {z.towns}</span><em>{ghs(z.lowBedEachWay)}</em></li>
@@ -122,7 +123,7 @@ export default async function Home() {
           )}
           <div className="incl">
             <div><b>Included in every hire</b><ul><li>Scheduled servicing, logged by hour meter</li><li>Comprehensive insurance and site induction papers</li><li>Standby replacement if a unit goes down for more than 24 hours</li><li>Pre-start checks and PPE for crewed hires</li></ul></div>
-            <div><b>Quoted separately</b><ul><li>Diesel, if you hire with fuel; delivered to site and billed on metered hours</li><li>Operator, with overtime after {pricing.dayHours} hours at 1.5×</li><li>Low-bed mobilisation to and from site, priced by zone</li><li>Attachments: breaker, ripper, long-reach boom</li></ul></div>
+            <div><b>Add what you need</b><ul><li>Diesel delivered to site, billed on the hours worked</li><li>Our operator, so you don&apos;t need to find your own</li><li>Low-bed transport to and from your site, priced by distance</li><li>Attachments: breaker, ripper, long-reach boom</li></ul></div>
           </div>
         </div>
       </section>
@@ -131,10 +132,10 @@ export default async function Home() {
         <div className="wrap">
           <div className="head"><div><p className="eyebrow">How hire works</p><h2 style={{ marginTop: ".5rem" }}>From request to iron on site</h2></div></div>
           <div className="steps">
-            <div className="step"><span className="n"><em>01</em> Step 1</span><h3>Send the job</h3><p>Tell us the machine, dates, site location, operator and fuel choice. WhatsApp, a call or the form below all reach dispatch.</p></div>
-            <div className="step"><span className="n"><em>02</em> Step 2</span><h3>Confirm &amp; deposit</h3><p>You get a written quote within the working day. A 50 percent deposit by MoMo or bank transfer locks the unit and the date.</p></div>
-            <div className="step"><span className="n"><em>03</em> Step 3</span><h3>Mobilise</h3><p>We load the machine on a low bed at the N1 yard. Greater Accra sites usually see it within 24 hours; other regions within 48.</p></div>
-            <div className="step"><span className="n"><em>04</em> Step 4</span><h3>Work &amp; settle</h3><p>Hours are logged off the machine&apos;s meter and signed daily by your site agent. Balance is settled against the signed log.</p></div>
+            <div className="step"><span className="n"><em>01</em> Step 1</span><h3>Send the job</h3><p>Tell us the machine, dates and site, and whether you want an operator and fuel. WhatsApp, call or use the form below, whichever suits you.</p></div>
+            <div className="step"><span className="n"><em>02</em> Step 2</span><h3>Your quote, your call</h3><p>You get a written quote within the working day. When you&apos;re happy, a deposit by MoMo or bank transfer holds the machine and your date.</p></div>
+            <div className="step"><span className="n"><em>03</em> Step 3</span><h3>We deliver</h3><p>We load your machine onto our low bed at the N1 yard. Greater Accra sites usually have it within 24 hours; other regions within 48.</p></div>
+            <div className="step"><span className="n"><em>04</em> Step 4</span><h3>Work &amp; settle</h3><p>Hours come off the machine&apos;s meter and your site agent signs them each day, so the bill matches exactly what you signed.</p></div>
           </div>
         </div>
       </section>
@@ -144,7 +145,7 @@ export default async function Home() {
           <div className="head"><div>
             <p className="eyebrow">Coverage</p>
             <h2 style={{ marginTop: ".5rem" }}>One yard, nationwide reach</h2>
-            <p className="lede">Every machine mobilises from our yard off the N1 Highway in Accra. Greater Accra trips are a flat rate; beyond that, mobilisation is charged per loaded kilometre.</p>
+            <p className="lede">Every machine leaves from our yard off the N1 Highway in Accra and reaches sites across the country. Transport is a set price by zone around Accra and by distance beyond it.</p>
           </div></div>
           <figure className="photo-band"><Image src="/img/ghana.jpg" alt="Excavator on drainage works in Ghana" width={1600} height={1067} sizes="(max-width: 1180px) 100vw, 1180px" /><figcaption>Excavator on drainage works, Ghana</figcaption></figure>
           <div className="cover">
@@ -164,12 +165,14 @@ export default async function Home() {
         </div>
       </section>
 
+      <Partners />
+
       <section className="band quote" id="quote">
         <div className="wrap">
           <div>
             <p className="eyebrow">Dispatch</p>
             <h2 style={{ marginTop: ".5rem" }}>Get a quote today</h2>
-            <p className="lede">Send the form and dispatch gets your request straight away, with a reference number and a one-tap WhatsApp follow-up. Or reach us directly on the numbers here.</p>
+            <p className="lede">Send the form and dispatch has it straight away, with a reference number and a one-tap WhatsApp follow-up. Asking is free and commits you to nothing. Or reach us directly on the numbers here.</p>
             <div className="contact">
               <div className="contact-row"><span className="lbl">WhatsApp</span><a className="code" href={waLink(wa, WA_GREETING)} target="_blank" rel="noopener">{DISPATCH_PHONE.display}</a><CopyButton text={DISPATCH_PHONE.tel} /></div>
               <div className="contact-row"><span className="lbl">Call</span><a className="code" href={`tel:${OFFICE_PHONE.tel}`}>{OFFICE_PHONE.display}</a><CopyButton text={OFFICE_PHONE.tel} /></div>
@@ -182,15 +185,15 @@ export default async function Home() {
 
       <section className="band" id="faq">
         <div className="wrap">
-          <div className="head"><div><p className="eyebrow">Questions</p><h2 style={{ marginTop: ".5rem" }}>Before you mobilise</h2></div></div>
+          <div className="head"><div><p className="eyebrow">Questions</p><h2 style={{ marginTop: ".5rem" }}>Good to know</h2></div></div>
           <div className="faq">
-            <details className="q"><summary>Who pays for diesel?</summary><p>Your choice on the quote form. Hire with fuel and RINAMAS delivers diesel to site and bills it against the metered hours. Hire without fuel and the machine leaves the yard with a full tank, you buy diesel on site, and it comes back full or the difference is billed at pump price.</p></details>
-            <details className="q"><summary>Do I have to take an operator?</summary><p>No. You can hire machine only if your operator holds a valid Ghanaian heavy-duty licence and signs our pre-start checklist. Operator hire is recommended for excavators above 20T and cranes.</p></details>
-            <details className="q"><summary>How much deposit, and how do I pay?</summary><p>50 percent of the quoted hire, by MTN MoMo, bank transfer or cheque for registered companies. The balance is settled against the signed hour log at the end of each week.</p></details>
-            <details className="q"><summary>What counts as a day?</summary><p>One shift of {pricing.dayHours} metered hours. Hours beyond that are charged pro rata, operator overtime runs at 1.5× after {pricing.dayHours} hours, and standby on site is {pricing.standbyPct}% of the day rate.</p></details>
-            <details className="q"><summary>Why does distance change the price?</summary><p>Tracked machines reach your site on our low bed, which is priced by zone from the N1 yard: a job in Tema or Kasoa costs less to deliver than one in Ada or Koforidua. The machine&apos;s day rate is the same everywhere. The estimate in the quote form shows the transport line separately so you can see it.</p></details>
-            <details className="q"><summary>What if the machine breaks down?</summary><p>Minor faults are fixed on site by our mechanic. If a unit is down for more than 24 hours we send a replacement from the yard and the down time is not charged.</p></details>
-            <details className="q"><summary>Do you hire for mining?</summary><p>Only for licensed operations with Minerals Commission papers. We do not hire for galamsey or any unlicensed mining, and machines found at such sites are recovered immediately.</p></details>
+            <details className="q"><summary>Can I buy my own diesel?</summary><p>Yes, you choose on the quote form. Hire with fuel and RINAMAS delivers diesel to site and bills it on the metered hours. Hire without fuel and the machine arrives with a full tank; you fuel it on site and send it back full.</p></details>
+            <details className="q"><summary>Can I use my own operator?</summary><p>Yes. Hire the machine only and bring an operator with a valid Ghanaian heavy-duty licence; we go through the pre-start checklist together on site. For excavators above 20T and cranes, we suggest adding our operator.</p></details>
+            <details className="q"><summary>How do I pay?</summary><p>By MTN MoMo, bank transfer, or cheque for registered companies. A deposit holds your machine and date; your quote shows the amount. The balance is settled each week against the hour log your site agent signs.</p></details>
+            <details className="q"><summary>What counts as a day?</summary><p>One shift of {pricing.dayHours} hours on the machine&apos;s meter. Planning longer days, or expecting pauses for rain or site work? Tell us when you ask and your quote will show exactly how those hours are priced.</p></details>
+            <details className="q"><summary>Why does distance change the price?</summary><p>Tracked machines reach your site on our low bed, which is priced by zone from the N1 yard: a job in Tema or Kasoa costs less to deliver than one in Ada or Koforidua. The machine&apos;s day rate is the same everywhere. Your quote shows transport as its own line, so you always see what it costs.</p></details>
+            <details className="q"><summary>What if the machine breaks down?</summary><p>Minor faults are fixed on site by our mechanic. If a unit is down for more than 24 hours we send a replacement from the yard, and you are not charged for the down time.</p></details>
+            <details className="q"><summary>Do you hire for mining?</summary><p>Yes, for licensed operations with Minerals Commission papers; share them with your request and we&apos;ll get moving. We don&apos;t supply galamsey or any unlicensed mining.</p></details>
           </div>
         </div>
       </section>

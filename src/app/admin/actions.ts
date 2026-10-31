@@ -12,6 +12,8 @@ import { CATALOGUE, CHANGE_LABEL, catalogueCreateData, catalogueDiff, catalogueU
 import { getPricing, rulesOf, setPricing, type Pricing } from "@/lib/settings";
 import { durationLabel, estimate } from "@/lib/pricing";
 import { toRateMachine, toRateZone } from "@/lib/rates";
+import { settlementFor } from "@/lib/money";
+import { PAYMENT_KINDS, PAYMENT_METHODS, balanceOf, billOf } from "@/lib/settle";
 import defaultZones from "../../../prisma/default-zones.json";
 
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
@@ -48,11 +50,16 @@ export async function updateQuote(fd: FormData) {
   const status = str(fd, "status");
   const adminNote = str(fd, "adminNote") || null;
   if (!(ALL_STATUSES as readonly string[]).includes(status)) return;
-  const before = await prisma.quoteRequest.findUnique({ where: { id } });
+  const before = await prisma.quoteRequest.findUnique({ where: { id }, include: { payments: true } });
   if (!before) return;
+  // A job cannot be closed without money on it: the final bill is what the books count.
+  if (status === "closed" && before.status !== "closed" && before.finalAmount == null) redirect(`/admin/requests/${id}?error=close-needs-bill`);
   await prisma.quoteRequest.update({ where: { id }, data: { status, adminNote } });
   const changes: string[] = [];
-  if (before.status !== status) changes.push(`status ${STATUS_LABEL[before.status]} → ${STATUS_LABEL[status]}`);
+  if (before.status !== status) {
+    const owed = status === "closed" ? balanceOf(before, before.payments) : null;
+    changes.push(`status ${STATUS_LABEL[before.status]} → ${STATUS_LABEL[status]}${owed ? (owed > 0 ? ` with ${ghs(owed)} still owed` : ` with ${ghs(-owed)} to refund`) : ""}`);
+  }
   if ((before.adminNote ?? "") !== (adminNote ?? "")) changes.push(adminNote ? `note "${adminNote}"` : "note cleared");
   if (changes.length) await logActivity(s, "quote.update", `${before.reference}: ${changes.join(", ")}`, { type: "quote", id });
   revalidatePath("/admin"); revalidatePath(`/admin/requests/${id}`); revalidatePath(`/quote/${id}`);
@@ -61,8 +68,6 @@ export async function updateQuote(fd: FormData) {
 const hireSchema = z.object({
   quotedAmount: z.number().int().min(0).nullable(),
   depositAmount: z.number().int().min(0).nullable(),
-  depositPaidAt: z.string().max(10).nullable(),
-  depositMethod: z.enum(["momo", "bank", "cash", "cheque"]).nullable(),
   siteAgentName: z.string().max(80).nullable(),
   siteAgentPhone: z.string().max(30).nullable(),
   dispatchDate: z.string().max(10).nullable(),
@@ -78,7 +83,6 @@ export async function saveHire(fd: FormData) {
   const id = str(fd, "id");
   const parsed = hireSchema.safeParse({
     quotedAmount: num(fd, "quotedAmount"), depositAmount: num(fd, "depositAmount"),
-    depositPaidAt: str(fd, "depositPaidAt") || null, depositMethod: str(fd, "depositMethod") || null,
     siteAgentName: str(fd, "siteAgentName") || null, siteAgentPhone: str(fd, "siteAgentPhone") || null,
     dispatchDate: str(fd, "dispatchDate") || null, dispatchMeter: num(fd, "dispatchMeter"), dispatchNotes: str(fd, "dispatchNotes") || null,
     returnDate: str(fd, "returnDate") || null, returnMeter: num(fd, "returnMeter"), returnNotes: str(fd, "returnNotes") || null,
@@ -89,13 +93,88 @@ export async function saveHire(fd: FormData) {
   const d = parsed.data;
   await prisma.quoteRequest.update({ where: { id }, data: d });
   const diffs: string[] = [];
-  const label: Record<string, string> = { quotedAmount: "quote", depositAmount: "deposit", depositPaidAt: "deposit date", depositMethod: "deposit method", siteAgentName: "site agent", siteAgentPhone: "site agent phone", dispatchDate: "dispatch date", dispatchMeter: "dispatch meter", dispatchNotes: "dispatch condition", returnDate: "return date", returnMeter: "return meter", returnNotes: "return condition" };
+  const label: Record<string, string> = { quotedAmount: "quote", depositAmount: "deposit required", siteAgentName: "site agent", siteAgentPhone: "site agent phone", dispatchDate: "dispatch date", dispatchMeter: "dispatch meter", dispatchNotes: "dispatch condition", returnDate: "return date", returnMeter: "return meter", returnNotes: "return condition" };
   for (const k of Object.keys(d) as (keyof typeof d)[]) {
     const a = before[k] ?? null, b = d[k] ?? null;
     if (String(a ?? "") !== String(b ?? "")) diffs.push(`${label[k]} → ${typeof b === "number" && (k === "quotedAmount" || k === "depositAmount") ? ghs(b) : (b ?? "cleared")}`);
   }
   if (diffs.length) await logActivity(s, "quote.hire", `${before.reference}: ${diffs.join("; ")}`, { type: "quote", id });
-  revalidatePath(`/admin/requests/${id}`); revalidatePath(`/quote/${id}`); revalidatePath("/admin");
+  revalidatePath(`/admin/requests/${id}`); revalidatePath(`/quote/${id}`); revalidatePath("/admin"); revalidatePath("/admin/finance");
+}
+
+/* ---------- money: payments and the final bill ---------- */
+const paymentSchema = z.object({
+  quoteId: z.string().min(1),
+  kind: z.enum(Object.keys(PAYMENT_KINDS) as [keyof typeof PAYMENT_KINDS, ...(keyof typeof PAYMENT_KINDS)[]]),
+  amount: z.number({ invalid_type_error: "Enter the amount in GH₵" }).int("Whole cedis only").min(1, "Amount must be at least GH₵ 1").max(10_000_000),
+  method: z.enum(Object.keys(PAYMENT_METHODS) as [keyof typeof PAYMENT_METHODS, ...(keyof typeof PAYMENT_METHODS)[]], { errorMap: () => ({ message: "Choose how it was paid" }) }),
+  paidAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick the date it was paid"),
+  reference: z.string().max(80).nullable(),
+  note: z.string().max(300).nullable(),
+});
+export type MoneyState = { error?: string; ok?: string } | undefined;
+const revalidateMoney = (id: string) => { revalidatePath(`/admin/requests/${id}`); revalidatePath(`/quote/${id}`); revalidatePath("/admin"); revalidatePath("/admin/finance"); };
+
+export async function recordPayment(_prev: MoneyState, fd: FormData): Promise<MoneyState> {
+  const s = await requireSession();
+  const parsed = paymentSchema.safeParse({
+    quoteId: str(fd, "quoteId"), kind: str(fd, "kind"), amount: num(fd, "amount"), method: str(fd, "method"), paidAt: str(fd, "paidAt"),
+    reference: str(fd, "reference") || null, note: str(fd, "note") || null,
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the payment." };
+  const d = parsed.data;
+  if (d.paidAt > new Date().toISOString().slice(0, 10)) return { error: "The payment date is in the future." };
+  const q = await prisma.quoteRequest.findUnique({ where: { id: d.quoteId }, include: { payments: true } });
+  if (!q) return { error: "That request no longer exists." };
+  await prisma.payment.create({ data: { ...d, loggedBy: s.name } });
+  const after = balanceOf(q, [...q.payments, d]);
+  const via = `${PAYMENT_METHODS[d.method]}${d.reference ? ` ref ${d.reference}` : ""}`;
+  await logActivity(s, "payment.add", `${q.reference}: ${PAYMENT_KINDS[d.kind].toLowerCase()} ${d.kind === "refund" ? "paid out" : "received"} ${ghs(d.amount)} by ${via} on ${d.paidAt}${after != null ? `; balance → ${ghs(after)}` : ""}`, { type: "quote", id: q.id });
+  revalidateMoney(q.id);
+  return { ok: `${PAYMENT_KINDS[d.kind]} of ${ghs(d.amount)} recorded.` };
+}
+
+/** Payments are the books: only the super admin can remove one, and the removal is logged in full. */
+export async function deletePayment(fd: FormData) {
+  const s = await requireSuper();
+  const p = await prisma.payment.findUnique({ where: { id: str(fd, "id") }, include: { quote: true } });
+  if (!p) return;
+  await prisma.payment.delete({ where: { id: p.id } });
+  await logActivity(s, "payment.delete", `${p.quote.reference}: removed ${PAYMENT_KINDS[p.kind as keyof typeof PAYMENT_KINDS]?.toLowerCase() ?? p.kind} ${ghs(p.amount)} (${PAYMENT_METHODS[p.method as keyof typeof PAYMENT_METHODS] ?? p.method}, ${p.paidAt}, logged by ${p.loggedBy ?? "unknown"})`, { type: "quote", id: p.quoteId });
+  revalidateMoney(p.quoteId);
+}
+
+/** Sets the final bill: either the settlement worked out on the server from the record, or an amount staff type in. */
+export async function setFinalBill(_prev: MoneyState, fd: FormData): Promise<MoneyState> {
+  const s = await requireSession();
+  const id = str(fd, "id"), mode = str(fd, "mode");
+  const [q, pricing] = await Promise.all([
+    prisma.quoteRequest.findUnique({ where: { id }, include: { machine: true, hourLogs: true, payments: true } }),
+    getPricing(),
+  ]);
+  if (!q) return { error: "That request no longer exists." };
+  let amount: number, finalJson: string | null = null, how: string;
+  if (mode === "settlement") {
+    const st = settlementFor(q, rulesOf(pricing));
+    if (!st) return { error: "This request has no listed machine: type the final bill instead." };
+    if (!st.ok) return { error: `${st.reason}.` };
+    amount = st.total;
+    finalJson = JSON.stringify({ ...st, computedAt: new Date().toISOString(), by: s.name, reviewedAt: pricing.reviewedAt });
+    how = `from the settlement (${st.days.onHire} days on hire, ${st.days.standby} standby)`;
+  } else {
+    const v = num(fd, "finalAmount");
+    if (v == null || !Number.isInteger(v) || v < 0 || v > 100_000_000) return { error: "Enter the final bill as whole cedis." };
+    amount = v;
+    how = "typed in";
+  }
+  const reason = str(fd, "reason").slice(0, 200);
+  const bill = billOf(q);
+  if (mode !== "settlement" && q.finalAmount != null && q.finalAmount !== amount && reason.length < 4) return { error: "Say why the final bill is changing; it goes in the activity log." };
+  await prisma.quoteRequest.update({ where: { id }, data: { finalAmount: amount, finalJson, finalSetAt: new Date(), finalSetBy: s.name } });
+  const after = balanceOf({ finalAmount: amount, quotedAmount: q.quotedAmount }, q.payments);
+  await logActivity(s, "quote.final", `${q.reference}: final bill ${q.finalAmount != null ? `${ghs(q.finalAmount)} → ` : ""}${ghs(amount)} ${how}${bill != null && q.finalAmount == null ? ` (quoted ${ghs(bill)})` : ""}${reason ? `, "${reason}"` : ""}; balance ${ghs(after ?? amount)}`, { type: "quote", id });
+  revalidateMoney(id);
+  return { ok: `Final bill set at ${ghs(amount)}.` };
 }
 
 export async function addHourLog(fd: FormData) {

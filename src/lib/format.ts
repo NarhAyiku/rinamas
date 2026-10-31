@@ -16,12 +16,12 @@ export const STATUS_LABEL: Record<string, string> = {
   new: "New", quoted: "Quoted", confirmed: "Confirmed", on_hire: "On hire", closed: "Closed", lost: "Lost",
 };
 export const STATUS_HINT: Record<string, string> = {
-  new: "Request received, not yet quoted",
-  quoted: "Written quote sent to the customer",
-  confirmed: "Deposit received, unit and date locked",
-  on_hire: "Machine dispatched and working on site",
-  closed: "Returned and balance settled",
-  lost: "Customer did not proceed",
+  new: "Request received, quote being prepared",
+  quoted: "Written quote sent, ready to accept",
+  confirmed: "Booking confirmed, machine and date held",
+  on_hire: "Machine delivered and working on site",
+  closed: "Machine back at the yard, all settled",
+  lost: "Closed without a hire",
 };
 
 export function makeReference() {

@@ -10,6 +10,7 @@ export function AdminNav({ isSuper }: { isSuper: boolean }) {
       <a href="/admin/fleet" aria-current={cur("/admin/fleet")}>Fleet &amp; rates</a>
       <a href="/admin/calculator" aria-current={cur("/admin/calculator")}>Calculator</a>
       <a href="/admin/pricing" aria-current={cur("/admin/pricing")}>Pricing</a>
+      {isSuper && <a href="/admin/finance" aria-current={cur("/admin/finance")}>Finance</a>}
       {isSuper && <a href="/admin/catalogue" aria-current={cur("/admin/catalogue")}>Catalogue</a>}
       {isSuper && <a href="/admin/activity" aria-current={cur("/admin/activity")}>Activity</a>}
       {isSuper && <a href="/admin/staff" aria-current={cur("/admin/staff")}>Staff</a>}

@@ -58,7 +58,13 @@ model QuoteRequest {
   quotedAmount   Int?
   depositAmount  Int?
   depositPaidAt  String?
-  depositMethod  String?  // momo | bank | cash | cheque
+  depositMethod  String?  // momo | bank | cash | cheque  (legacy: deposits are now Payment rows; backfilled once)
+
+  // final bill, set when the machine is back: what the job actually cost (GHS)
+  finalAmount    Int?
+  finalJson      String?  // the settlement lines it was built from, if taken from the settlement
+  finalSetAt     DateTime?
+  finalSetBy     String?
 
   // site contact
   siteAgentName  String?
@@ -73,8 +79,26 @@ model QuoteRequest {
   returnNotes    String?
 
   hourLogs   HourLog[]
+  payments   Payment[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+// Money received (or refunded) against a hire. Balance = final bill (or quote) - sum of payments.
+model Payment {
+  id        String   @id @default(cuid())
+  quoteId   String
+  quote     QuoteRequest @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  kind      String   // deposit | balance | extra | refund
+  amount    Int      // GHS, always positive; refunds are subtracted
+  method    String   // momo | bank | cash | cheque
+  paidAt    String   // YYYY-MM-DD
+  reference String?  // MoMo transaction id, cheque number, bank ref
+  note      String?
+  loggedBy  String?
+  createdAt DateTime @default(now())
+
+  @@index([paidAt])
 }
 
 // Daily log signed off by the site agent: working hours, standby, fuel supplied

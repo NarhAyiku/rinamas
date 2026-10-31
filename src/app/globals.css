@@ -501,3 +501,44 @@ table.compact th,table.compact td{padding:.55rem .7rem}
 .zone-strip li b{font-family:var(--display);text-transform:uppercase;font-size:1.05rem}
 .zone-strip li span{font-size:.88rem;color:var(--muted);overflow-wrap:anywhere}
 .zone-strip li em{font-style:normal;font-family:var(--display);font-weight:900;font-size:1.35rem;color:var(--accent-text)}
+
+/* ---------- AI photo fill ---------- */
+.ai-photo{display:grid;gap:.6rem;min-width:0}
+.ai-hint{margin:0}
+.ai-tag{display:inline-block;margin-left:.4rem;padding:.05rem .35rem;border-radius:3px;background:var(--accent-grad);color:var(--accent-ink);font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.08em;line-height:1.4;vertical-align:middle;text-transform:uppercase}
+label.f.ai-filled input,label.f.ai-filled select,label.f.ai-filled textarea{border-color:var(--accent-deep);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent);background:color-mix(in srgb,var(--accent) 7%,var(--bg))}
+.ai-check.ai-filled{outline:2px solid var(--accent-deep);outline-offset:3px;border-radius:4px}
+.ai-status{margin:0;display:grid;gap:.3rem;padding:.7rem .85rem;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:6px;background:var(--surface-2);font-size:.92rem;line-height:1.4;overflow-wrap:anywhere}
+.ai-status p{margin:0}
+.ai-status .ai-tag{margin:0 .35rem 0 0}
+.ai-notes{color:var(--muted);font-size:.86rem}
+.ai-pending{display:flex;align-items:center;gap:.6rem;font-weight:600}
+.ai-spin{width:16px;height:16px;flex:none;border-radius:50%;border:2.5px solid var(--line);border-top-color:var(--accent-deep);animation:ai-spin .8s linear infinite}
+@keyframes ai-spin{to{transform:rotate(360deg)}}
+
+/* ---------- money (hire record + finance) ---------- */
+.money-sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem}
+.money-sum>div{display:grid;gap:.15rem;padding:.8rem 1rem;border:1px solid var(--line);border-left:5px solid var(--line);border-radius:6px;background:var(--surface-2);min-width:0}
+.money-sum span{font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.money-sum b{font-family:var(--display);font-weight:900;font-size:1.6rem;line-height:1.1;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.money-sum small{font-size:.8rem;color:var(--muted)}
+.money-sum .owed{border-left-color:#C2410C}.money-sum .owed b{color:#C2410C}
+.money-sum .settled{border-left-color:var(--ok)}.money-sum .settled b{color:var(--ok)}
+.money-sum .refund{border-left-color:var(--info)}.money-sum .refund b{color:var(--info)}
+.money-tiles .tile b{font-size:1.7rem;overflow-wrap:anywhere}
+.chip-owed{color:#C2410C;font-weight:600}
+@media (max-width:860px){.money-sum{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:420px){.money-sum b{font-size:1.3rem}}
+
+/* ---------- partners ---------- */
+.partners{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:1rem}
+.partner{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:6px;overflow:hidden;box-shadow:var(--shadow)}
+.partner-logo{position:relative;height:112px;background:#fff;border-bottom:1px solid var(--line);display:grid;place-items:center;padding:0 1.2rem}
+.partner-logo img{object-fit:contain;padding:1.1rem max(1.4rem,calc(50% - 115px))}
+.partner-word{font-family:var(--display);font-weight:800;font-size:1.6rem;text-transform:uppercase;color:#1B1814;text-align:center;line-height:1}
+.partner-body{display:flex;flex-direction:column;gap:.45rem;padding:1rem 1.1rem 1.15rem;flex:1}
+.partner-rel{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-text)}
+.partner-body h3{font-size:1.4rem}
+.partner-body p{color:var(--muted);font-size:.98rem}
+.partner-body a{margin-top:auto;padding-top:.3rem;font-weight:600;color:var(--fg);text-decoration-color:var(--accent-deep);text-underline-offset:3px;overflow-wrap:anywhere}
+.partner-body a:hover{color:var(--accent-text)}

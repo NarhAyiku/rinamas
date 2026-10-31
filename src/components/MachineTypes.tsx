@@ -10,7 +10,7 @@ export function MachineTypes() {
         <div className="types-head">
           <p className="eyebrow">What we hire</p>
           <h2>Pick a machine</h2>
-          <p className="types-sub">Tap a type to see sizes and rates.</p>
+          <p className="types-sub">Tap a type to see sizes and specs.</p>
         </div>
         <ul className="types-row">
           {MACHINE_TYPES.map((t) => (

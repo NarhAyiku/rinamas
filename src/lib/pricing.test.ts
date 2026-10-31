@@ -1,7 +1,7 @@
 // Run with: npm test  (node --test, Node 22.6+ strips the types)
 import { test } from "node:test";
 import assert from "node:assert/strict";
-// @ts-expect-error TS5097: node --test needs the explicit .ts extension; tsconfig does not enable allowImportingTsExtensions
+// node --test needs the explicit .ts extension (tsconfig allows it)
 import { DEFAULT_RULES, daysFromDuration, estimate, estimateText, hireCost, ladder, round10, type RateMachine, type RateZone, type Rules } from "./pricing.ts";
 
 const excavator: RateMachine = { id: "m1", name: "JCB excavator, 20T class", dayRate: 8500, rateUnit: "day", operatorRate: 500, fuelLPerDay: 120, selfDrive: false, priceOnRequest: false };
