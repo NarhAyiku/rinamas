@@ -14,8 +14,14 @@ export type MachineCard = {
 export function Fleet({ machines, showPrices = true }: { machines: MachineCard[]; showPrices?: boolean }) {
   const [filter, setFilter] = useState("all");
   const shown = machines.filter((m) => filter === "all" || m.category === filter);
-  // A card opens the machine pop-up: big photo, every detail, and a request form for that machine.
+  // A card opens the machine pop-up: big photo, every detail, and a request form for that machine. The name is also a
+  // real link to the machine's own page, for search engines, new tabs and visitors without JavaScript.
   const pick = (m: MachineCard) => openMachine(m.slug);
+  const onLink = (e: React.MouseEvent, m: MachineCard) => {
+    e.stopPropagation();
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    e.preventDefault(); pick(m);
+  };
 
   return (
     <>
@@ -33,7 +39,7 @@ export function Fleet({ machines, showPrices = true }: { machines: MachineCard[]
             </div>
             <div className="body">
               <span className="cat">{m.categoryLabel}</span>
-              <h3>{m.name}</h3>
+              <h3><a href={`/hire/${m.slug}`} onClick={(e) => onLink(e, m)} tabIndex={-1}>{m.name}</a></h3>
               <dl className="specs">
                 {parseSpecs(m.specs).map(([k, v]) => (
                   <div key={k}><dt>{k}</dt><dd>{v}</dd></div>

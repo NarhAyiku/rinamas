@@ -15,7 +15,7 @@ export function MachineTypes() {
         <ul className="types-row">
           {MACHINE_TYPES.map((t) => (
             <li key={t.label}>
-              <a href={`/?machine=${t.slug}`} data-open-machine={(t.slugs ?? [t.slug]).join(",")} data-pick={t.slug}>
+              <a href={`/hire/${t.slug}`} data-open-machine={(t.slugs ?? [t.slug]).join(",")} data-pick={t.slug}>
                 <span className="types-photo">
                   <Image src={t.image} alt="" fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 190px" style={{ objectFit: "cover", objectPosition: t.objectPosition ?? "50% 55%" }} />
                 </span>
@@ -23,7 +23,7 @@ export function MachineTypes() {
               </a>
             </li>
           ))}
-          <li className="types-more"><a href="#quote">Something else? <b>Ask dispatch</b></a></li>
+          <li className="types-more"><a href="/#quote">Something else? <b>Ask dispatch</b></a></li>
         </ul>
       </div>
     </section>

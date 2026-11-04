@@ -6,3 +6,13 @@ export const WA_GREETING = "Hello RINAMAS dispatch, I'm looking to hire a machin
 
 /** WhatsApp dispatch number, international digits only. Server-side: reads WHATSAPP_NUMBER. */
 export const whatsappNumber = () => process.env.WHATSAPP_NUMBER ?? "233243518749";
+
+/** The business as it should read everywhere (site, Google, Facebook, Instagram, WhatsApp). Keep these identical across profiles. */
+export const BUSINESS_NAME = "RINAMAS Equipment and Trading Enterprise";
+export const CEO = "Narh Richard Mashie";
+export const ADDRESS = { street: "Off N1 Highway, George Walker Bush Motorway", locality: "Accra", region: "Greater Accra", country: "GH" };
+export const HOURS = { label: "Mon–Sat, 06:00–18:00 GMT", days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], opens: "06:00", closes: "18:00" };
+/** Yard pin for maps and structured data. null until the owner supplies the Google Maps pin. */
+export const YARD_GEO: { lat: number; lng: number } | null = null;
+/** Public profiles, listed as sameAs in structured data. Empty until they exist. */
+export const SOCIAL: { google: string; facebook: string; instagram: string } = { google: "", facebook: "", instagram: "" };

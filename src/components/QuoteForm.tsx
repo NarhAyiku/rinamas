@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DISPATCH_PHONE } from "@/lib/contact";
 import { estimate, fmtGhs, type EstimateOk, type RateTable } from "@/lib/pricing";
+import { track } from "@/lib/analytics";
 
 export type { RateTable } from "@/lib/pricing";
 
@@ -59,6 +60,10 @@ export function QuoteForm({ machines, rates, fixedMachine, idPrefix = "" }: { ma
       const res = await fetch("/api/quotes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Something went wrong. Please try again or call dispatch."); setBusy(false); return; }
+      track("quote_submitted", {
+        source: "form", machine: fixedMachine?.name ?? machines.find((m) => m.id === machineId)?.name ?? "other",
+        zone: rates?.zones.find((z) => z.id === zoneId)?.name ?? null, days: Number(days), path: location.pathname,
+      });
       router.push(`/quote/${data.id}`);
     } catch {
       setError(`We couldn't send that. Check your connection and try again, or call ${DISPATCH_PHONE.display}.`);

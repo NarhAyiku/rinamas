@@ -8,7 +8,7 @@ import { Footer } from "@/components/Footer";
 import { CopyButton } from "@/components/CopyButton";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Quote request received" };
+export const metadata = { title: "Quote request received", robots: { index: false, follow: false } };
 
 export default async function QuotePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

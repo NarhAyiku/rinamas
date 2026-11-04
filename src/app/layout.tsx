@@ -1,11 +1,19 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { SwRegister } from "@/components/SwRegister";
+import { Analytics } from "@/components/Analytics";
+import { og, SITE_URL } from "@/lib/seo";
+
+const DESCRIPTION =
+  "JCB-led heavy-duty machine hire in Ghana: Loadall telehandlers, backhoes, excavators, dozers, loaders, graders, rollers, low beds and cranes, with operators and haulage from our yard off the N1 Highway, Accra.";
 
 export const metadata: Metadata = {
-  title: { default: "RINAMAS Equipment & Trading", template: "%s · RINAMAS" },
-  description:
-    "JCB-led heavy-duty machine hire in Ghana: Loadall telehandlers, backhoes, excavators, dozers, loaders, graders, rollers, low beds and cranes, with operators and haulage from our yard off the N1 Highway, Accra.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: "RINAMAS Equipment & Trading · Heavy machine hire in Ghana", template: "%s · RINAMAS" },
+  description: DESCRIPTION,
+  openGraph: og({ title: "RINAMAS Equipment & Trading · Heavy machine hire in Ghana", description: DESCRIPTION, url: "/" }),
+  twitter: { card: "summary_large_image" },
+  ...(process.env.GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } } : {}),
   icons: { icon: "/brand/rinamas-badge.svg", apple: "/apple-touch-icon.png" },
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "RINAMAS" },
 };
@@ -28,7 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
-        {children}<SwRegister />
+        {children}<SwRegister /><Analytics />
       </body>
     </html>
   );

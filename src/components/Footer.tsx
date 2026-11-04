@@ -2,10 +2,11 @@ import { Brand } from "./Badge";
 import { BigType } from "./BigType";
 import credits from "@/data/credits.json";
 import { MACHINE_TYPES } from "@/data/catalogue";
+import { REGIONS } from "@/data/regions";
 import { waLink } from "@/lib/format";
 import { DISPATCH_PHONE, MAPS_URL, OFFICE_PHONE, WA_GREETING, whatsappNumber } from "@/lib/contact";
 
-/** Machine links in the footer: on the landing page they open the machine pop-up, elsewhere they load it via ?machine=. */
+/** Machine links in the footer: where the machine pop-up is on the page they open it, otherwise they go to the machine page. */
 const HIRE = ["Excavators", "Payloaders", "Bulldozers", "Backhoes", "Tipper trucks", "Low beds", "Cranes"]
   .map((label) => MACHINE_TYPES.find((t) => t.label === label)!)
   .filter(Boolean);
@@ -35,9 +36,9 @@ export function Footer() {
           <nav className="foot-col" aria-label="Machines">
             <b>Hire</b>
             {HIRE.map((t) => (
-              <a key={t.label} href={`/?machine=${t.slug}`} data-open-machine={(t.slugs ?? [t.slug]).join(",")} data-pick={t.slug}>{t.label}</a>
+              <a key={t.label} href={`/hire/${t.slug}`} data-open-machine={(t.slugs ?? [t.slug]).join(",")} data-pick={t.slug}>{t.label}</a>
             ))}
-            <a href="/#fleet" className="foot-more">All machines →</a>
+            <a href="/hire" className="foot-more">All machines →</a>
           </nav>
           <div className="foot-col">
             <b>Talk to dispatch</b>
@@ -56,6 +57,7 @@ export function Footer() {
             <a href="/#rates">Rates</a>
             <a href="/#how">How hire works</a>
             <a href="/#coverage">Coverage</a>
+            {REGIONS.map((r) => <a key={r.slug} href={`/regions/${r.slug}`} className="foot-sub">{r.name}</a>)}
             <a href="/#partners">Partners</a>
             <a href="/#faq">Questions</a>
           </nav>
@@ -63,7 +65,7 @@ export function Footer() {
       </div>
       <BigType />
       <div className="wrap bottombar">
-        <p className="legal">© {new Date().getFullYear()} RINAMAS Equipment and Trading Enterprise</p>
+        <p className="legal">© {new Date().getFullYear()} RINAMAS Equipment and Trading Enterprise{process.env.NEXT_PUBLIC_POSTHOG_KEY ? " · We count visits (no ads, no cross-site tracking) to see what helps customers." : ""}</p>
         <div className="bottom-links">
           <a href="/admin">Staff login</a>
           <details className="credits">

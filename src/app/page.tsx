@@ -1,47 +1,30 @@
-import { prisma } from "@/lib/db";
 import { ghs, waLink } from "@/lib/format";
-import { DISPATCH_PHONE, MAPS_URL, OFFICE_PHONE, WA_GREETING, whatsappNumber } from "@/lib/contact";
+import { DISPATCH_PHONE, MAPS_URL, OFFICE_PHONE, WA_GREETING } from "@/lib/contact";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Fleet } from "@/components/Fleet";
-import { QuoteForm } from "@/components/QuoteForm";
-import { CopyButton } from "@/components/CopyButton";
+import { QuoteBand } from "@/components/QuoteBand";
 import { StickyBar } from "@/components/StickyBar";
 import { MachineTypes } from "@/components/MachineTypes";
 import { Partners } from "@/components/Partners";
 import { MachineDialog } from "@/components/MachineDialog";
-import type { MachineCard } from "@/components/Fleet";
 import Image from "next/image";
-import { fmtReviewed, getPricing } from "@/lib/settings";
-import { buildRateTable, loadZones } from "@/lib/rates";
+import { fmtReviewed } from "@/lib/settings";
 import { ladder } from "@/lib/pricing";
+import { loadPublic } from "@/lib/public-data";
+import { REGIONS } from "@/data/regions";
+import { faqItems } from "@/data/faq";
+import { businessJsonLd, faqJsonLd, JsonLd } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
-
-const REGIONS: [string, string][] = [
-  ["Greater Accra", "Accra, Tema, Kasoa, Oyibi, Prampram"], ["Ashanti", "Kumasi, Obuasi, Ejisu, Konongo"],
-  ["Eastern", "Koforidua, Nsawam, Akosombo"], ["Central", "Cape Coast, Winneba, Mankessim"],
-  ["Western", "Takoradi, Tarkwa, Bogoso"], ["Volta", "Ho, Sogakope, Aflao"],
-  ["Bono & Ahafo", "Sunyani, Techiman, Goaso"], ["Northern & Savannah", "Tamale, Damongo, on request"],
-];
+export const metadata = { alternates: { canonical: "/" } };
 
 export default async function Home() {
-  const [machines, pricing, zones] = await Promise.all([
-    prisma.machine.findMany({ where: { hidden: false }, orderBy: [{ available: "desc" }, { sortOrder: "asc" }] }),
-    getPricing(),
-    loadZones(),
-  ]);
-  const wa = whatsappNumber();
+  const { machines, pricing, zones, cards, rates, wa } = await loadPublic();
   const reviewed = fmtReviewed(pricing.reviewedAt);
-  const rates = buildRateTable(machines, zones, pricing);
   const lad = (d: number) => ladder(d, pricing);
   const lastZone = zones[zones.length - 1];
-  // Only what the cards and pop-up need goes to the browser; with prices hidden no rate leaves the server.
-  const cards: MachineCard[] = machines.map((m) => ({
-    id: m.id, slug: m.slug, name: m.name, category: m.category, categoryLabel: m.categoryLabel, image: m.image, specs: m.specs,
-    rateUnit: m.rateUnit, available: m.available, priceOnRequest: m.priceOnRequest, selfDrive: m.selfDrive,
-    dayRate: pricing.showPrices ? m.dayRate : 0, operatorRate: pricing.showPrices ? m.operatorRate : null,
-  }));
+  const faq = faqItems(pricing);
 
   return (
     <>
@@ -158,7 +141,7 @@ export default async function Home() {
           <figure className="photo-band"><Image src="/img/ghana.jpg" alt="Excavator on drainage works in Ghana" width={1600} height={1067} sizes="(max-width: 1180px) 100vw, 1180px" /><figcaption>Excavator on drainage works, Ghana</figcaption></figure>
           <div className="cover">
             <div className="regions">
-              {REGIONS.map(([r, towns]) => <div className="region" key={r}><span className="dot" /><div><b>{r}</b><span>{towns}</span></div></div>)}
+              {REGIONS.map((r) => <a className="region" key={r.slug} href={`/regions/${r.slug}`}><span className="dot" /><div><b>{r.name}</b><span>{r.towns.slice(0, 4).join(", ")}{r.slug === "northern-savannah" ? ", on request" : ""}</span></div></a>)}
             </div>
             <div className="depot">
               <h3>The yard</h3>
@@ -175,39 +158,20 @@ export default async function Home() {
 
       <Partners />
 
-      <section className="band quote" id="quote">
-        <div className="wrap">
-          <div>
-            <p className="eyebrow">Dispatch</p>
-            <h2 style={{ marginTop: ".5rem" }}>Get a quote today</h2>
-            <p className="lede">Send the form and dispatch has it straight away, with a reference number and a one-tap WhatsApp follow-up. Asking is free and commits you to nothing. Or reach us directly on the numbers here.</p>
-            <div className="contact">
-              <div className="contact-row"><span className="lbl">WhatsApp</span><a className="code" href={waLink(wa, WA_GREETING)} target="_blank" rel="noopener">{DISPATCH_PHONE.display}</a><CopyButton text={DISPATCH_PHONE.tel} /></div>
-              <div className="contact-row"><span className="lbl">Call</span><a className="code" href={`tel:${OFFICE_PHONE.tel}`}>{OFFICE_PHONE.display}</a><CopyButton text={OFFICE_PHONE.tel} /></div>
-              <div className="contact-row"><span className="lbl">Yard</span><a className="code" href={MAPS_URL} target="_blank" rel="noopener">Off N1 Highway, George Walker Bush Motorway, Accra ↗</a></div>
-            </div>
-          </div>
-          <QuoteForm machines={machines.map((m) => ({ id: m.id, name: m.name }))} rates={rates} />
-        </div>
-      </section>
+      <QuoteBand machines={machines} rates={rates} wa={wa} />
 
       <section className="band" id="faq">
         <div className="wrap">
           <div className="head"><div><p className="eyebrow">Questions</p><h2 style={{ marginTop: ".5rem" }}>Good to know</h2></div></div>
           <div className="faq">
-            <details className="q"><summary>Can I buy my own diesel?</summary><p>Yes, you choose on the quote form. Hire with fuel and RINAMAS delivers diesel to site and bills it on the metered hours. Hire without fuel and the machine arrives with a full tank; you fuel it on site and send it back full.</p></details>
-            <details className="q"><summary>Can I use my own operator?</summary><p>Yes. Hire the machine only and bring an operator with a valid Ghanaian heavy-duty licence; we go through the pre-start checklist together on site. For excavators above 20T and cranes, we suggest adding our operator.</p></details>
-            <details className="q"><summary>How do I pay?</summary><p>By MTN MoMo, bank transfer, or cheque for registered companies. A deposit holds your machine and date; your quote shows the amount. The balance is settled each week against the hour log your site agent signs.</p></details>
-            <details className="q"><summary>What counts as a day?</summary><p>One shift of {pricing.dayHours} hours on the machine&apos;s meter. Planning longer days, or expecting pauses for rain or site work? Tell us when you ask and your quote will show exactly how those hours are priced.</p></details>
-            <details className="q"><summary>Why does distance change the price?</summary><p>Tracked machines reach your site on our low bed, which is priced by zone from the N1 yard: a job in Tema or Kasoa costs less to deliver than one in Ada or Koforidua. The machine&apos;s day rate is the same everywhere. Your quote shows transport as its own line, so you always see what it costs.</p></details>
-            <details className="q"><summary>What if the machine breaks down?</summary><p>Minor faults are fixed on site by our mechanic. If a unit is down for more than 24 hours we send a replacement from the yard, and you are not charged for the down time.</p></details>
-            <details className="q"><summary>Do you hire for mining?</summary><p>Yes, for licensed operations with Minerals Commission papers; share them with your request and we&apos;ll get moving. We don&apos;t supply galamsey or any unlicensed mining.</p></details>
+            {faq.map((f) => <details className="q" key={f.q}><summary>{f.q}</summary><p>{f.a}</p></details>)}
           </div>
         </div>
       </section>
       <Footer />
       <StickyBar wa={wa} />
       <MachineDialog machines={cards} rates={rates} wa={wa} />
+      <JsonLd data={[businessJsonLd(machines), faqJsonLd(faq)]} />
     </>
   );
 }

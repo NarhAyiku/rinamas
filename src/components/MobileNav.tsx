@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { DISPATCH_PHONE } from "@/lib/contact";
 import { ThemeToggle } from "./ThemeToggle";
 
-const LINKS = [["/#fleet", "Fleet"], ["/#rates", "Rates"], ["/#how", "How it works"], ["/#coverage", "Coverage"], ["/#faq", "FAQ"]];
+const LINKS = [["/hire", "Machines"], ["/#rates", "Rates"], ["/#how", "How it works"], ["/#coverage", "Coverage"], ["/#faq", "FAQ"]];
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
