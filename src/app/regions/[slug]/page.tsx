@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { StickyBar } from "@/components/StickyBar";
+import { PublicChat } from "@/components/PublicChat";
 import { PageHero } from "@/components/PageHero";
 import { Fleet } from "@/components/Fleet";
 import { MachineDialog } from "@/components/MachineDialog";
@@ -90,6 +91,7 @@ export default async function RegionPage({ params }: Props) {
       <QuoteBand machines={machines} rates={rates} wa={wa} title={`Get a quote for your ${r.name} site`} />
       <Footer />
       <StickyBar wa={wa} />
+      <PublicChat machines={machines} wa={wa} />
       <MachineDialog machines={cards} rates={rates} wa={wa} />
       <JsonLd data={[businessJsonLd(machines), breadcrumbJsonLd(crumbs.filter(([, p]) => !p.includes("#")))]} />
     </>

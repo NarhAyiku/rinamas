@@ -49,7 +49,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
       {quotes.length === 0 && (
         <div className="empty">
           <b>No requests {status ? `marked ${STATUS_LABEL[status]}` : "yet"}{q ? ` matching “${q}”` : ""}.</b>
-          <span>When a customer sends the quote form on the site, it appears here with a reference number. You can also open a request directly if the customer calls with their reference.</span>
+          <span>When a customer sends the quote form on the site, or a request through the Ask RINAMAS chat, it appears here with a reference number. You can also open a request directly if the customer calls with their reference.</span>
         </div>
       )}
 
@@ -81,6 +81,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
                   <span className="chip-s">{qr.operator === "with" ? "Wet hire · operator" : "Dry hire · machine only"}</span>
                   <span className="chip-s">{qr.fuel === "with" ? "Fuel by RINAMAS" : "Customer's fuel"}</span>
                   {money && <span className={`chip-s ${money.cls}`}>{money.text}</span>}
+                  {qr.source === "chat" && <span className="chip-s chip-chat">Via chat</span>}
                 </div>
                 {qr.notes && <span className="muted note">“{qr.notes}”</span>}
               </div>

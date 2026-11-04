@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { StickyBar } from "@/components/StickyBar";
+import { PublicChat } from "@/components/PublicChat";
 import { PageHero } from "@/components/PageHero";
 import { Fleet } from "@/components/Fleet";
 import { MachineDialog } from "@/components/MachineDialog";
@@ -52,6 +53,7 @@ export default async function HireIndex() {
       <QuoteBand machines={machines} rates={rates} wa={wa} />
       <Footer />
       <StickyBar wa={wa} />
+      <PublicChat machines={machines} wa={wa} />
       <MachineDialog machines={cards} rates={rates} wa={wa} />
       <JsonLd data={[list, breadcrumbJsonLd([["Home", "/"], ["Machines", "/hire"]])]} />
     </>

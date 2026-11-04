@@ -46,6 +46,7 @@ model QuoteRequest {
   notes       String?
   status      String   @default("new") // new | quoted | confirmed | on_hire | closed | lost
   adminNote   String?
+  source      String   @default("form") // form | chat: where the request came from (website form or the Ask RINAMAS chat)
 
   // estimator inputs and the indicative figure shown to the customer (snapshot of lines and rules)
   zoneId        String?

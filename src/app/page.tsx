@@ -5,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { Fleet } from "@/components/Fleet";
 import { QuoteBand } from "@/components/QuoteBand";
 import { StickyBar } from "@/components/StickyBar";
+import { PublicChat } from "@/components/PublicChat";
 import { MachineTypes } from "@/components/MachineTypes";
 import { Partners } from "@/components/Partners";
 import { MachineDialog } from "@/components/MachineDialog";
@@ -170,6 +171,7 @@ export default async function Home() {
       </section>
       <Footer />
       <StickyBar wa={wa} />
+      <PublicChat machines={machines} wa={wa} />
       <MachineDialog machines={cards} rates={rates} wa={wa} />
       <JsonLd data={[businessJsonLd(machines), faqJsonLd(faq)]} />
     </>

@@ -47,7 +47,7 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
         <div>
           <p className="eyebrow">Hire record</p>
           <h2 className="ref-h">{q.reference}</h2>
-          <p className="muted">Received {fmtDate(q.createdAt)} · {q.machineName}</p>
+          <p className="muted">Received {fmtDate(q.createdAt)}{q.source === "chat" ? " via the website chat" : ""} · {q.machineName}</p>
         </div>
         <div className="row-form">
           <StatusPill status={q.status} />

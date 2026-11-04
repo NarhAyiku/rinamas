@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { StickyBar } from "@/components/StickyBar";
+import { PublicChat } from "@/components/PublicChat";
 import { PageHero } from "@/components/PageHero";
 import { MachineDetail } from "@/components/MachineDetail";
 import { groupOf } from "@/data/catalogue";
@@ -112,6 +113,7 @@ export default async function MachinePage({ params }: Props) {
       </section>
       <Footer />
       <StickyBar wa={wa} />
+      <PublicChat machines={machines} wa={wa} />
       <JsonLd data={[service, breadcrumbJsonLd([["Home", "/"], ["Machines", "/hire"], [m.name, `/hire/${m.slug}`]])]} />
     </>
   );
