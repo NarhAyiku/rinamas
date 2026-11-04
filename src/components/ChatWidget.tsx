@@ -12,6 +12,9 @@ type HireInput = InferUITools<AssistantTools>["submitHireRequest"]["input"];
 
 const STARTERS = ["Excavator for 2 weeks in Kumasi?", "Do you supply operators?", "How does delivery work?", "I need a backhoe next Monday"];
 
+/** Models sometimes write **bold** even when asked for plain text; show it as bold rather than asterisks. */
+const withBold = (t: string) => t.replace(/^#+\s*/gm, "").split(/\*\*(.+?)\*\*/g).map((s, i) => (i % 2 ? <b key={i}>{s}</b> : s));
+
 const fmtDate = (d: string) => { const t = new Date(d + "T00:00:00"); return isNaN(+t) ? d : t.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "long" }); };
 
 /**
@@ -87,7 +90,7 @@ export function ChatWidget({ machines, wa }: { machines: { slug: string; name: s
           {messages.map((m) => (
             <div key={m.id} className={`chat-msg chat-${m.role}`}>
               {m.parts.map((p, i) => {
-                if (p.type === "text") return p.text ? <p key={i}>{p.text}</p> : null;
+                if (p.type === "text") return p.text ? <p key={i}>{m.role === "assistant" ? withBold(p.text) : p.text}</p> : null;
                 if (p.type === "tool-estimateHire" && (p.state === "input-streaming" || p.state === "input-available")) return <p key={i} className="chat-note">Working out the price…</p>;
                 if (p.type !== "tool-submitHireRequest") return null;
                 if (p.state === "approval-requested") return <HireCard key={i} input={p.input} machine={machineName(p.input.machineSlug)}>
