@@ -57,7 +57,7 @@ export function Footer() {
             <a href="/#rates">Rates</a>
             <a href="/#how">How hire works</a>
             <a href="/#coverage">Coverage</a>
-            {REGIONS.map((r) => <a key={r.slug} href={`/regions/${r.slug}`} className="foot-sub">{r.name}</a>)}
+            <div className="foot-subs">{REGIONS.map((r) => <a key={r.slug} href={`/regions/${r.slug}`} className="foot-sub">{r.name}</a>)}</div>
             <a href="/#partners">Partners</a>
             <a href="/#faq">Questions</a>
           </nav>

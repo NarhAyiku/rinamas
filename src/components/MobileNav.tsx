@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { DISPATCH_PHONE } from "@/lib/contact";
+import { openChat } from "@/lib/chat-event";
 import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [["/hire", "Machines"], ["/#rates", "Rates"], ["/#how", "How it works"], ["/#coverage", "Coverage"], ["/#faq", "FAQ"]];
@@ -25,6 +26,7 @@ export function MobileNav() {
         <div className="mobile-menu-cta">
           <a className="btn btn-accent" href="/#quote" onClick={() => setOpen(false)}>Request a quote</a>
           <a className="btn btn-ghost" href={`tel:${DISPATCH_PHONE.tel}`}>Call {DISPATCH_PHONE.display}</a>
+          <button type="button" className="btn btn-ghost menu-ask" onClick={() => { setOpen(false); openChat(); }}>Ask RINAMAS</button>
           {/* The header has no room for the theme toggle on phones, so it lives here. */}
           <div className="mobile-menu-theme"><span>Light or dark</span><ThemeToggle /></div>
         </div>
