@@ -12,8 +12,13 @@ type HireInput = InferUITools<AssistantTools>["submitHireRequest"]["input"];
 
 const STARTERS = ["Excavator for 2 weeks in Kumasi?", "Do you supply operators?", "How does delivery work?", "I need a backhoe next Monday"];
 
-/** Models sometimes write **bold** even when asked for plain text; show it as bold rather than asterisks. */
-const withBold = (t: string) => t.replace(/^#+\s*/gm, "").split(/\*\*(.+?)\*\*/g).map((s, i) => (i % 2 ? <b key={i}>{s}</b> : s));
+/** House style for replies, whatever the model writes: no en or em dashes ("20–22" → "20 to 22", " – " → ", "),
+ *  no heading marks, and **bold** shown as bold rather than asterisks. */
+const tidy = (t: string) => t
+  .replace(/^#+\s*/gm, "")
+  .replace(/(\d)\s*[–—]\s*(\d)/g, "$1 to $2")
+  .replace(/\s*[–—]\s*/g, ", ")
+  .split(/\*\*(.+?)\*\*/g).map((s, i) => (i % 2 ? <b key={i}>{s}</b> : s));
 
 const fmtDate = (d: string) => { const t = new Date(d + "T00:00:00"); return isNaN(+t) ? d : t.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "long" }); };
 
@@ -74,7 +79,7 @@ export function ChatWidget({ machines, wa }: { machines: { slug: string; name: s
 
       <section id="chat-panel" className="chat-panel" role="dialog" aria-label="Ask RINAMAS" hidden={!open}>
         <header className="chat-head">
-          <div><b>Ask RINAMAS</b><span>AI assistant · answers from today&apos;s fleet</span></div>
+          <div><b>Ask RINAMAS</b><span>Machines, prices and bookings</span></div>
           <button type="button" className="mdlg-x" onClick={close} aria-label="Close chat">
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" /></svg>
           </button>
@@ -83,14 +88,14 @@ export function ChatWidget({ machines, wa }: { machines: { slug: string; name: s
         <div className="chat-log" ref={list} aria-live="polite">
           {messages.length === 0 && (
             <div className="chat-hello">
-              <p>Hello! Ask about any machine, price, delivery to your site, or send a hire request right here.</p>
+              <p>Ask about any machine, price or delivery to your site, or book a machine right here.</p>
               <div className="chat-starters">{STARTERS.map((s) => <button key={s} type="button" className="chip" onClick={() => send(s)}>{s}</button>)}</div>
             </div>
           )}
           {messages.map((m) => (
             <div key={m.id} className={`chat-msg chat-${m.role}`}>
               {m.parts.map((p, i) => {
-                if (p.type === "text") return p.text ? <p key={i}>{m.role === "assistant" ? withBold(p.text) : p.text}</p> : null;
+                if (p.type === "text") return p.text ? <p key={i}>{m.role === "assistant" ? tidy(p.text) : p.text}</p> : null;
                 if (p.type === "tool-estimateHire" && (p.state === "input-streaming" || p.state === "input-available")) return <p key={i} className="chat-note">Working out the price…</p>;
                 if (p.type !== "tool-submitHireRequest") return null;
                 if (p.state === "approval-requested") return <HireCard key={i} input={p.input} machine={machineName(p.input.machineSlug)}>
@@ -121,7 +126,7 @@ export function ChatWidget({ machines, wa }: { machines: { slug: string; name: s
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }} />
           <button type="submit" className="btn btn-accent btn-sm" disabled={busy || !input.trim()}>Send</button>
         </form>
-        <p className="chat-foot">AI answers can be wrong; your written quote is final. Rather talk? <a href={waLink(wa, WA_GREETING)} target="_blank" rel="noopener">WhatsApp dispatch</a></p>
+        <p className="chat-foot">Your written quote from dispatch is final. Rather talk? <a href={waLink(wa, WA_GREETING)} target="_blank" rel="noopener">WhatsApp dispatch</a></p>
       </section>
     </>
   );

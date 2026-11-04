@@ -43,10 +43,13 @@ export function intl(phone: string) {
   return d;
 }
 
+/** House style: number ranges read "20 to 22", never with an en or em dash. */
+export const plainRange = (s: string) => s.replace(/(\d)\s*[–—]\s*(\d)/g, "$1 to $2");
+
 export function parseSpecs(json: string): [string, string][] {
   try {
     const v = JSON.parse(json);
-    return Array.isArray(v) ? v : [];
+    return Array.isArray(v) ? v.map(([k, val]: [string, string]) => [k, plainRange(String(val))]) : [];
   } catch {
     return [];
   }
