@@ -95,7 +95,7 @@ export function QuoteForm({ machines, rates, fixedMachine, idPrefix = "" }: { ma
         </div>
       </div>
       {rates && rates.zones.length > 0 && (
-        <label className="f full">How far from our N1 yard, Accra
+        <label className="f full">How far from our yard on the Accra-Tema Motorway
           <select id={id("zone")} name="zoneId" value={zoneId} onChange={(e) => setZoneId(e.target.value)}>
             {rates.zones.map((z) => <option key={z.id} value={z.id}>Zone {z.name} · {z.label.charAt(0).toLowerCase() + z.label.slice(1)} · {z.towns}</option>)}
             <option value="">Further away / not sure</option>

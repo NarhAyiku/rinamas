@@ -48,7 +48,7 @@ export function MachineDetail({ m, rates, wa, title, titleId, Heading = "h2", id
         </dl>
         <ul className="mdlg-facts">
           <li>{trip ? "Comes with our driver; we load and secure your machine" : "With our operator or machine only, by the day, week or month"}</li>
-          <li>{m.selfDrive ? "Drives to your site, so no low-bed charge" : "Delivered on our low bed from the N1 yard, priced by distance"}</li>
+          <li>{m.selfDrive ? "Drives to your site, so no low-bed charge" : "Delivered on our low bed from our Accra yard, priced by distance"}</li>
           <li>Insured, serviced by hour meter, and replaced if it is down for more than 24 hours</li>
         </ul>
       </div>

@@ -30,7 +30,7 @@ export function Footer() {
         <div className="foot-grid">
           <div className="foot-brand">
             <Brand />
-            <p>Heavy-machine hire, haulage and operators for contractors across Ghana, from our yard off the N1 in Accra.</p>
+            <p>Heavy-machine hire, haulage and operators for contractors across Ghana, from our yard on the Accra-Tema Motorway.</p>
             <p className="foot-ceo"><span>CEO</span>Narh Richard Mashie</p>
           </div>
           <nav className="foot-col" aria-label="Machines">
@@ -49,7 +49,7 @@ export function Footer() {
           </div>
           <div className="foot-col">
             <b>The yard</b>
-            <span>Off N1 Highway<br />George Walker Bush Motorway<br />Accra, Ghana</span>
+            <span>Accra-Tema Motorway<br />Accra, Ghana</span>
             <a href={MAPS_URL} target="_blank" rel="noopener">Open in Google Maps ↗</a>
           </div>
           <nav className="foot-col" aria-label="Site">

@@ -5,7 +5,7 @@ import { Analytics } from "@/components/Analytics";
 import { og, SITE_URL } from "@/lib/seo";
 
 const DESCRIPTION =
-  "JCB-led heavy-duty machine hire in Ghana: Loadall telehandlers, backhoes, excavators, dozers, loaders, graders, rollers, low beds and cranes, with operators and haulage from our yard off the N1 Highway, Accra.";
+  "JCB-led heavy-duty machine hire in Ghana: Loadall telehandlers, backhoes, excavators, dozers, loaders, graders, rollers, low beds and cranes, with operators and haulage from our yard on the Accra-Tema Motorway.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

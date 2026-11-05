@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!r) return { title: "Region not found" };
   const towns = r.towns.slice(0, 3).join(", ");
   const title = `Heavy equipment hire in ${regionLabel(r)}: ${towns}`;
-  const description = `Excavators, backhoes, dozers, graders, rollers, tippers and low beds for hire in ${towns} and across ${regionLabel(r)}, from RINAMAS's N1 yard in Accra. Delivery ${r.delivery}, with or without operator.`;
+  const description = `Excavators, backhoes, dozers, graders, rollers, tippers and low beds for hire in ${towns} and across ${regionLabel(r)}, from RINAMAS's yard on the Accra-Tema Motorway. Delivery ${r.delivery}, with or without operator.`;
   return { title, description, alternates: { canonical: `/regions/${r.slug}` }, openGraph: og({ title, description, url: `/regions/${r.slug}` }) };
 }
 
@@ -48,7 +48,7 @@ export default async function RegionPage({ params }: Props) {
         crumbs={crumbs}
         eyebrow="Coverage"
         title={`Machine hire in ${regionLabel(r)}`}
-        sub={<>{r.towns.join(" · ")}. From our N1 yard in Accra, {r.delivery}.</>}
+        sub={<>{r.towns.join(" · ")}. From our yard on the Accra-Tema Motorway, {r.delivery}.</>}
       />
       <section className="band">
         <div className="wrap region-page">
@@ -57,7 +57,7 @@ export default async function RegionPage({ params }: Props) {
           </div>
           <dl className="region-facts">
             <div><dt>Delivery</dt><dd>{r.delivery.charAt(0).toUpperCase() + r.delivery.slice(1)}, from booking to machine on site</dd></div>
-            <div><dt>Leaves from</dt><dd>Our yard off the N1 Highway, George Walker Bush Motorway, Accra</dd></div>
+            <div><dt>Leaves from</dt><dd>Our yard on the Accra-Tema Motorway, Accra</dd></div>
             <div><dt>Transport</dt><dd>
               {near.length > 0
                 ? <>{near.map((z) => `Zone ${z.name} (${z.towns})${pricing.showPrices ? `: ${ghs(z.lowBedEachWay)} each way` : ""}`).join("; ")}. Other towns are quoted by distance.</>

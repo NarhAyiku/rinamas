@@ -1,5 +1,5 @@
 /**
- * The regions RINAMAS serves from the N1 yard. Read by the landing page coverage block, the /regions pages, the
+ * The regions RINAMAS serves from our Accra yard. Read by the landing page coverage block, the /regions pages, the
  * sitemap, llms.txt and the chat assistant, so every place says the same thing. Pure data, safe for client code.
  */
 export type Region = {
@@ -21,7 +21,7 @@ export const REGIONS: Region[] = [
     name: "Greater Accra",
     towns: ["Accra", "Tema", "Oyibi", "Prampram", "Madina", "Adenta", "Dodowa"],
     delivery: "usually within 24 hours",
-    intro: "Our yard sits on the N1 in Accra, so Greater Accra sites are the closest we serve. Estate roads in Oyibi and Prampram, foundations and drains in Tema and Madina, plot clearing around Dodowa: most jobs here need a backhoe, an excavator or a payloader for a few days, and a low bed gets it to you on a set zone price.",
+    intro: "Our yard sits on the Accra-Tema Motorway, so Greater Accra sites are the closest we serve. Estate roads in Oyibi and Prampram, foundations and drains in Tema and Madina, plot clearing around Dodowa: most jobs here need a backhoe, an excavator or a payloader for a few days, and a low bed gets it to you on a set zone price.",
     popular: ["backhoe", "excavator-20t", "wheel-loader", "tipper", "roller-10t"],
   },
   {
@@ -29,7 +29,7 @@ export const REGIONS: Region[] = [
     name: "Ashanti",
     towns: ["Kumasi", "Obuasi", "Ejisu", "Konongo"],
     delivery: "usually within 48 hours",
-    intro: "Kumasi's growth keeps estate, road and drainage work going all year, and Obuasi and Konongo bring heavier earthmoving. For hires in Ashanti we usually send the machine with our operator, since a day lost to a missing driver costs more than the trip from Accra. Low-bed transport from the N1 is quoted by distance before you book.",
+    intro: "Kumasi's growth keeps estate, road and drainage work going all year, and Obuasi and Konongo bring heavier earthmoving. For hires in Ashanti we usually send the machine with our operator, since a day lost to a missing driver costs more than the trip from Accra. Low-bed transport from Accra is quoted by distance before you book.",
     popular: ["excavator-20t", "bulldozer-d6", "motor-grader", "wheel-loader", "lowbed"],
   },
   {
@@ -61,7 +61,7 @@ export const REGIONS: Region[] = [
     name: "Volta",
     towns: ["Ho", "Sogakope", "Aflao"],
     delivery: "usually within 48 hours",
-    intro: "Volta jobs run from Ho's town works to roads and drains around Sogakope and the border at Aflao. The low bed crosses at Sogakope or Akosombo depending on your site, and we quote transport by distance from the N1 so you see that cost before you book.",
+    intro: "Volta jobs run from Ho's town works to roads and drains around Sogakope and the border at Aflao. The low bed crosses at Sogakope or Akosombo depending on your site, and we quote transport by distance from Accra so you see that cost before you book.",
     popular: ["backhoe", "excavator-20t", "motor-grader", "roller-10t", "tipper"],
   },
   {

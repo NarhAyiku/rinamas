@@ -23,7 +23,7 @@ export async function GET() {
   const text = [
     `# ${BUSINESS_NAME}`,
     "",
-    `> Heavy-machine hire, haulage and operators across Ghana, from a yard off the N1 Highway in Accra. Excavators, backhoe loaders, bulldozers, wheel loaders, graders, rollers, tipper trucks, low beds, cranes and telehandlers, by the day, week or month, with or without an operator.`,
+    `> Heavy-machine hire, haulage and operators across Ghana, from a yard on the Accra-Tema Motorway in Accra. Excavators, backhoe loaders, bulldozers, wheel loaders, graders, rollers, tipper trucks, low beds, cranes and telehandlers, by the day, week or month, with or without an operator.`,
     "",
     "## Contact",
     `- Dispatch (call or WhatsApp): ${DISPATCH_PHONE.tel}`,
@@ -49,7 +49,7 @@ export async function GET() {
     "",
     "## Delivery and regions",
     pricing.showPrices && zones.length
-      ? `Low-bed transport from the N1 yard, each way: ${zones.map((z) => `Zone ${z.name} (${z.label.toLowerCase()}: ${z.towns}) ${ghs(z.lowBedEachWay)}`).join("; ")}; beyond ${zones[zones.length - 1].maxKm} km, ${ghs(pricing.perKmBeyond)} per km, quoted.`
+      ? `Low-bed transport from our Accra yard, each way: ${zones.map((z) => `Zone ${z.name} (${z.label.toLowerCase()}: ${z.towns}) ${ghs(z.lowBedEachWay)}`).join("; ")}; beyond ${zones[zones.length - 1].maxKm} km, ${ghs(pricing.perKmBeyond)} per km, quoted.`
       : "Low-bed transport is priced by zone around Accra and by distance beyond it, shown as its own line on every quote.",
     ...REGIONS.map((r) => `- [${regionLabel(r)}](${abs(`/regions/${r.slug}`)}): ${r.towns.join(", ")}. Delivery ${r.delivery}.`),
     "",

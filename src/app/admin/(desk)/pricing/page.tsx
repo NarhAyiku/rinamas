@@ -19,7 +19,7 @@ export default async function PricingAdmin() {
       <PricingForm pricing={pricing} />
 
       <h3 style={{ margin: "2.4rem 0 .4rem" }}>Low bed zones</h3>
-      <p className="hint" style={{ margin: "0 0 1rem", maxWidth: "70ch" }}>Road distance from the N1 yard decides the transport line: the estimator charges the zone price twice (deliver and collect). Sites beyond the last zone are priced per km in the calculator and quoted by dispatch. Zones are never deleted because old quotes refer to them; deactivate one instead.</p>
+      <p className="hint" style={{ margin: "0 0 1rem", maxWidth: "70ch" }}>Road distance from our Accra yard decides the transport line: the estimator charges the zone price twice (deliver and collect). Sites beyond the last zone are priced per km in the calculator and quoted by dispatch. Zones are never deleted because old quotes refer to them; deactivate one instead.</p>
       <ZonesTable zones={zones} isSuper={session?.role === "superadmin"} />
     </>
   );

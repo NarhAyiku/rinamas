@@ -1,5 +1,5 @@
 {
-  "note": "Low bed transport bands by road distance from the N1/Achimota yard. Prices are PLACEHOLDERS assumed on 2026-10-29 from market comparison, not RINAMAS costs: the owner must replace them under Admin > Pricing > Zones. Used by prisma/seed.mjs and the 'Seed default zones' button.",
+  "note": "Low bed transport bands by road distance from the Accra-Tema Motorway yard. Prices are PLACEHOLDERS assumed on 2026-10-29 from market comparison, not RINAMAS costs: the owner must replace them under Admin > Pricing > Zones. Used by prisma/seed.mjs and the 'Seed default zones' button.",
   "assumed": true,
   "zones": [
     { "name": "A", "label": "Within 30 km of the yard", "towns": "Madina, Adenta, Tema, Kasoa", "maxKm": 30, "lowBedEachWay": 1500, "sortOrder": 0 },

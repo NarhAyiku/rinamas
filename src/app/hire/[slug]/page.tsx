@@ -79,7 +79,7 @@ export default async function MachinePage({ params }: Props) {
         crumbs={[["Home", "/"], ["Machines", "/hire"], [m.name, `/hire/${m.slug}`]]}
         eyebrow={m.categoryLabel}
         title={hireTitle(m.name)}
-        sub="With or without our operator, by the day, week or month. Delivered from our N1 yard in Accra to sites across Ghana."
+        sub="With or without our operator, by the day, week or month. Delivered from our yard on the Accra-Tema Motorway to sites across Ghana."
       />
       <section className="band machine-page">
         <div className="wrap">

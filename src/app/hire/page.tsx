@@ -14,7 +14,7 @@ import { abs, breadcrumbJsonLd, hireTitle, JsonLd, og } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 
 const title = "Machines for hire in Ghana: excavators, backhoes, dozers, low beds";
-const description = "Every machine RINAMAS hires from its N1 yard in Accra: excavators, backhoe loaders, bulldozers, wheel loaders, graders, rollers, tipper trucks, low beds, cranes and telehandlers, with or without operator.";
+const description = "Every machine RINAMAS hires from its yard on the Accra-Tema Motorway: excavators, backhoe loaders, bulldozers, wheel loaders, graders, rollers, tipper trucks, low beds, cranes and telehandlers, with or without operator.";
 
 export const metadata: Metadata = { title, description, alternates: { canonical: "/hire" }, openGraph: og({ title, description, url: "/hire" }) };
 
@@ -34,7 +34,7 @@ export default async function HireIndex() {
         crumbs={[["Home", "/"], ["Machines", "/hire"]]}
         eyebrow="Spec sheet"
         title="Machines for hire"
-        sub="Everything on the N1 yard, with or without our operator, by the day, week or month. Tap a machine for specs and a quick request."
+        sub="Everything on our Accra yard, with or without our operator, by the day, week or month. Tap a machine for specs and a quick request."
       />
       <section className="band" id="fleet">
         <div className="wrap">

@@ -33,7 +33,7 @@ export function businessJsonLd(machines: { name: string; slug: string }[] = []):
     "@id": BUSINESS_ID,
     name: BUSINESS_NAME,
     alternateName: "RINAMAS",
-    description: "Heavy-machine hire, haulage and operators across Ghana: excavators, backhoes, dozers, loaders, graders, rollers, tipper trucks, low beds, cranes and telehandlers, from a yard off the N1 Highway in Accra.",
+    description: "Heavy-machine hire, haulage and operators across Ghana: excavators, backhoes, dozers, loaders, graders, rollers, tipper trucks, low beds, cranes and telehandlers, from a yard on the Accra-Tema Motorway in Accra.",
     url: SITE_URL,
     logo: abs("/icon-512.png"),
     image: abs(OG_IMAGE.url),

@@ -16,7 +16,7 @@ export function QuoteBand({ machines, rates, wa, title = "Get a quote today" }: 
           <div className="contact">
             <div className="contact-row"><span className="lbl">WhatsApp</span><a className="code" href={waLink(wa, WA_GREETING)} target="_blank" rel="noopener">{DISPATCH_PHONE.display}</a><CopyButton text={DISPATCH_PHONE.tel} /></div>
             <div className="contact-row"><span className="lbl">Call</span><a className="code" href={`tel:${OFFICE_PHONE.tel}`}>{OFFICE_PHONE.display}</a><CopyButton text={OFFICE_PHONE.tel} /></div>
-            <div className="contact-row"><span className="lbl">Yard</span><a className="code" href={MAPS_URL} target="_blank" rel="noopener">Off N1 Highway, George Walker Bush Motorway, Accra ↗</a></div>
+            <div className="contact-row"><span className="lbl">Yard</span><a className="code" href={MAPS_URL} target="_blank" rel="noopener">Accra-Tema Motorway, Accra ↗</a></div>
           </div>
         </div>
         <QuoteForm machines={machines.map((m) => ({ id: m.id, name: m.name }))} rates={rates} />

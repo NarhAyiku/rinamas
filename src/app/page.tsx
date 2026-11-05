@@ -50,7 +50,7 @@ export default async function Home() {
       <section className="stats" aria-label="At a glance">
         <div className="wrap">
           <div className="stat"><b>{machines.length}</b><span>Machine classes on the yard</span></div>
-          <div className="stat"><b>N1</b><span>Yard on the George Walker Bush Motorway</span></div>
+          <div className="stat"><b>Accra</b><span>Yard on the Accra-Tema Motorway</span></div>
           <div className="stat"><b>24h</b><span>Usual delivery, Greater Accra</span></div>
           <div className="stat"><b>10</b><span>Regions served</span></div>
         </div>
@@ -104,7 +104,7 @@ export default async function Home() {
           {pricing.showPrices && zones.length > 0 && (
             <div className="zone-strip">
               <h3>Low bed to your site, each way</h3>
-              <p className="hint" style={{ margin: 0 }}>Tracked machines ride to your site on our low bed from the N1 yard. Prices are one way; delivery and collection are two trips, both shown in your estimate.</p>
+              <p className="hint" style={{ margin: 0 }}>Tracked machines ride to your site on our low bed from our Accra yard. Prices are one way; delivery and collection are two trips, both shown in your estimate.</p>
               <ul>
                 {zones.map((z) => (
                   <li key={z.id}><b>Zone {z.name}</b><span>within {z.maxKm} km · {z.towns}</span><em>{ghs(z.lowBedEachWay)}</em></li>
@@ -126,7 +126,7 @@ export default async function Home() {
           <div className="steps">
             <div className="step"><span className="n"><em>01</em> Step 1</span><h3>Send the job</h3><p>Tell us the machine, dates and site, and whether you want an operator and fuel. WhatsApp, call or use the form below, whichever suits you.</p></div>
             <div className="step"><span className="n"><em>02</em> Step 2</span><h3>Your quote, your call</h3><p>You get a written quote within the working day. When you&apos;re happy, a deposit by MoMo or bank transfer holds the machine and your date.</p></div>
-            <div className="step"><span className="n"><em>03</em> Step 3</span><h3>We deliver</h3><p>We load your machine onto our low bed at the N1 yard. Greater Accra sites usually have it within 24 hours; other regions within 48.</p></div>
+            <div className="step"><span className="n"><em>03</em> Step 3</span><h3>We deliver</h3><p>We load your machine onto our low bed at our Accra yard. Greater Accra sites usually have it within 24 hours; other regions within 48.</p></div>
             <div className="step"><span className="n"><em>04</em> Step 4</span><h3>Work &amp; settle</h3><p>Hours come off the machine&apos;s meter and your site agent signs them each day, so the bill matches exactly what you signed.</p></div>
           </div>
         </div>
@@ -137,7 +137,7 @@ export default async function Home() {
           <div className="head"><div>
             <p className="eyebrow">Coverage</p>
             <h2 style={{ marginTop: ".5rem" }}>One yard, nationwide reach</h2>
-            <p className="lede">Every machine leaves from our yard off the N1 Highway in Accra and reaches sites across the country. Transport is a set price by zone around Accra and by distance beyond it.</p>
+            <p className="lede">Every machine leaves from our yard on the Accra-Tema Motorway and reaches sites across the country. Transport is a set price by zone around Accra and by distance beyond it.</p>
           </div></div>
           <figure className="photo-band"><Image src="/img/ghana.jpg" alt="Excavator on drainage works in Ghana" width={1600} height={1067} sizes="(max-width: 1180px) 100vw, 1180px" /><figcaption>Excavator on drainage works, Ghana</figcaption></figure>
           <div className="cover">
@@ -147,7 +147,7 @@ export default async function Home() {
             <div className="depot">
               <h3>The yard</h3>
               <dl>
-                <dt>Address</dt><dd>RINAMAS Equipment and Trading Enterprise<br />Off N1 Highway, George Walker Bush Motorway<br />Accra, Ghana<br /><a className="maplink" href={MAPS_URL} target="_blank" rel="noopener">Open in Google Maps ↗</a></dd>
+                <dt>Address</dt><dd>RINAMAS Equipment and Trading Enterprise<br />Accra-Tema Motorway<br />Accra, Ghana<br /><a className="maplink" href={MAPS_URL} target="_blank" rel="noopener">Open in Google Maps ↗</a></dd>
                 <dt>CEO</dt><dd>Narh Richard Mashie</dd>
                 <dt>Phone</dt><dd><a href={`tel:${DISPATCH_PHONE.tel}`}>+233 (0)24 351 8749</a><br /><a href={`tel:${OFFICE_PHONE.tel}`}>+233 (0)24 927 6713</a></dd>
                 <dt>Hours</dt><dd>Mon to Sat, 08:00 to 18:00 GMT. Dispatch line answers Sundays for machines already on hire.</dd>

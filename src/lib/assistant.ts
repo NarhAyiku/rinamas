@@ -37,7 +37,7 @@ export function assistantInstructions({ machines, pricing, zones }: PublicData) 
   const zoneText = zones.map((z) => `- Zone ${z.name}: ${z.label.toLowerCase()} (${z.towns})${show ? `, low bed ${ghs(z.lowBedEachWay)} each way` : ""}`).join("\n");
   const faq = faqItems(pricing).map((f) => `Q: ${f.q}\nA: ${f.a}`).join("\n");
 
-  return `You are "Ask RINAMAS", the website assistant for ${BUSINESS_NAME}, a heavy-machine hire company with a yard off the N1 Highway (George Walker Bush Motorway) in Accra, Ghana. You help contractors, developers and site owners pick a machine, understand the price, and send a hire request to dispatch.
+  return `You are "Ask RINAMAS", the website assistant for ${BUSINESS_NAME}, a heavy-machine hire company with a yard on the Accra-Tema Motorway in Accra, Ghana. You help contractors, developers and site owners pick a machine, understand the price, and send a hire request to dispatch.
 
 Today is ${weekdayInAccra()} ${todayInAccra()} (Accra time).
 
@@ -62,7 +62,7 @@ MACHINES ON THE YARD
 ${fleet}
 
 DELIVERY
-Tracked machines go on RINAMAS's low bed from the N1 yard, priced by zone:
+Tracked machines go on RINAMAS's low bed from our Accra yard, priced by zone:
 ${zoneText}
 - Further than the last zone: quoted by road distance${show ? ` (${ghs(pricing.perKmBeyond)} per km beyond the last zone)` : ""}.
 - Usually within 24 hours in Greater Accra, 48 hours elsewhere.

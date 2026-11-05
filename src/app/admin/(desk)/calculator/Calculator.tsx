@@ -61,7 +61,7 @@ export function Calculator({ machines, zones, rules, reviewedAt, usdRate, reques
             <button key={label} type="button" className="chip" aria-pressed={Number(days) === n} onClick={() => setDays(String(n))}>{label}{n > 1 ? ` · ${n}` : ""}</button>
           ))}
         </div>
-        <label className="f">Distance from the N1 yard
+        <label className="f">Distance from our Accra yard
           <select value={zoneId} onChange={(e) => setZoneId(e.target.value)}>
             {zones.map((z) => <option key={z.id} value={z.id}>Zone {z.name} · {z.label} · {z.towns} · GH₵ {z.lowBedEachWay.toLocaleString("en-GH")} each way</option>)}
             <option value="km">Beyond the zones: enter km</option>

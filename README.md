@@ -18,7 +18,7 @@
 
 <img src=".github/readme/machines.jpg" alt="Excavators, payloaders, loaders, bulldozers, backhoes, graders, rollers, cranes, piling rigs, tippers, low beds and telehandlers" width="100%">
 
-Excavators from 3 T to 30 T+, payloaders and wheel loaders, bulldozers, backhoes, motor graders, rollers, mobile cranes, piling rigs, telehandlers, tipper trucks and a 60 T low bed. With or without an operator, by the day, week or month, delivered from our yard off the N1 in Accra to sites across Ghana.
+Excavators from 3 T to 30 T+, payloaders and wheel loaders, bulldozers, backhoes, motor graders, rollers, mobile cranes, piling rigs, telehandlers, tipper trucks and a 60 T low bed. With or without an operator, by the day, week or month, delivered from our yard on the Accra-Tema Motorway to sites across Ghana.
 
 <img src=".github/readme/fleet.jpg" alt="Spec sheet for every machine on the yard" width="100%">
 
