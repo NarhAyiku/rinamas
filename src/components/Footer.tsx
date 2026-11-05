@@ -45,7 +45,7 @@ export function Footer() {
             <a className="foot-phone" href={`tel:${DISPATCH_PHONE.tel}`}>{DISPATCH_PHONE.display}</a>
             <a className="foot-phone" href={`tel:${OFFICE_PHONE.tel}`}>{OFFICE_PHONE.display}</a>
             <a href={waLink(wa, WA_GREETING)} target="_blank" rel="noopener">WhatsApp {DISPATCH_PHONE.display}</a>
-            <span className="foot-hours">Mon to Sat, 06:00 to 18:00</span>
+            <span className="foot-hours">Mon to Sat, 08:00 to 18:00</span>
           </div>
           <div className="foot-col">
             <b>The yard</b>

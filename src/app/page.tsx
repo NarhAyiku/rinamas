@@ -150,7 +150,7 @@ export default async function Home() {
                 <dt>Address</dt><dd>RINAMAS Equipment and Trading Enterprise<br />Off N1 Highway, George Walker Bush Motorway<br />Accra, Ghana<br /><a className="maplink" href={MAPS_URL} target="_blank" rel="noopener">Open in Google Maps ↗</a></dd>
                 <dt>CEO</dt><dd>Narh Richard Mashie</dd>
                 <dt>Phone</dt><dd><a href={`tel:${DISPATCH_PHONE.tel}`}>+233 (0)24 351 8749</a><br /><a href={`tel:${OFFICE_PHONE.tel}`}>+233 (0)24 927 6713</a></dd>
-                <dt>Hours</dt><dd>Mon to Sat, 06:00 to 18:00 GMT. Dispatch line answers Sundays for machines already on hire.</dd>
+                <dt>Hours</dt><dd>Mon to Sat, 08:00 to 18:00 GMT. Dispatch line answers Sundays for machines already on hire.</dd>
               </dl>
             </div>
           </div>
