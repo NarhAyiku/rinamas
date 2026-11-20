@@ -1,4 +1,4 @@
-import { ALL_STATUSES, STATUSES, STATUS_HINT, STATUS_LABEL } from "@/lib/format";
+import { ALL_STATUSES, STATUSES, STATUS_HINT, STATUS_LABEL, fmtDate } from "@/lib/format";
 import { updateQuote } from "@/app/admin/actions";
 
 export function StatusPill({ status }: { status: string }) {
@@ -18,9 +18,9 @@ export function Timeline({ status, style, customer }: { status: string; style?: 
   );
 }
 
-/** Status + internal note form, shared by the request list and the hire record. */
-export function QuoteStatusForm({ id, status, adminNote, className, style, notePlaceholder }: {
-  id: string; status: string; adminNote: string | null; className: string; style?: React.CSSProperties; notePlaceholder?: string;
+/** Status + add-a-note form, shared by the request list and the hire record. A note is added under your name; it never replaces another. */
+export function QuoteStatusForm({ id, status, className, style, notePlaceholder }: {
+  id: string; status: string; className: string; style?: React.CSSProperties; notePlaceholder?: string;
 }) {
   return (
     <form action={updateQuote} className={className} style={style}>
@@ -28,8 +28,13 @@ export function QuoteStatusForm({ id, status, adminNote, className, style, noteP
       <label className="f">Status
         <select name="status" defaultValue={status}>{ALL_STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}</select>
       </label>
-      <label className="f" style={{ flex: 1 }}>Internal note<input name="adminNote" defaultValue={adminNote ?? ""} placeholder={notePlaceholder} /></label>
+      <label className="f" style={{ flex: 1 }}>Add a note<input name="note" maxLength={1000} placeholder={notePlaceholder} /></label>
       <button className="btn btn-accent btn-sm" type="submit">Save</button>
     </form>
   );
+}
+
+/** "Ama Mensah, 20 Nov, 14:05": who wrote a desk note and when. */
+export function NoteByline({ authorName, createdAt }: { authorName: string; createdAt: Date }) {
+  return <span className="note-by"><b>{authorName}</b> <time>{fmtDate(createdAt)}</time></span>;
 }

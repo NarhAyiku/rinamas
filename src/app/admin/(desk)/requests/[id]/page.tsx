@@ -3,8 +3,8 @@ import { prisma } from "@/lib/db";
 import { fmtDate, ghs, intl, waLink } from "@/lib/format";
 import { getSession } from "@/lib/auth";
 import { getPricing, rulesOf } from "@/lib/settings";
-import { QuoteStatusForm, StatusPill, Timeline } from "@/components/StatusBits";
-import { addHourLog, deleteHourLog, deletePayment, saveHire } from "@/app/admin/actions";
+import { NoteByline, QuoteStatusForm, StatusPill, Timeline } from "@/components/StatusBits";
+import { addHourLog, addNote, deleteHourLog, deleteNote, deletePayment, saveHire, setOwner } from "@/app/admin/actions";
 import { parseSnapshot, settlementFor } from "@/lib/money";
 import { PAYMENT_KINDS, PAYMENT_METHODS, balanceOf, billOf, paidTotal } from "@/lib/settle";
 import { FinalBillForm, PaymentForm } from "./MoneyForms";
@@ -17,10 +17,14 @@ const ERRORS: Record<string, string> = {
 
 export default async function RequestPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string }> }) {
   const [{ id }, { error }] = await Promise.all([params, searchParams]);
-  const [session, q, pricing] = await Promise.all([
+  const [session, q, pricing, staff] = await Promise.all([
     getSession(),
-    prisma.quoteRequest.findUnique({ where: { id }, include: { hourLogs: { orderBy: { date: "asc" } }, machine: true, zone: true, payments: { orderBy: [{ paidAt: "asc" }, { createdAt: "asc" }] } } }),
+    prisma.quoteRequest.findUnique({ where: { id }, include: {
+      hourLogs: { orderBy: { date: "asc" } }, machine: true, zone: true, payments: { orderBy: [{ paidAt: "asc" }, { createdAt: "asc" }] },
+      owner: { select: { id: true, name: true } }, deskNotes: { orderBy: { createdAt: "desc" } },
+    } }),
     getPricing(),
+    prisma.staff.findMany({ where: { active: true }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
   ]);
   if (!q) notFound();
   const isSuper = session?.role === "superadmin";
@@ -31,7 +35,9 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
   const suggestKind = !depositIn && q.finalAmount == null ? "deposit" : balance != null && balance < 0 ? "refund" : "balance";
   const suggestAmount = suggestKind === "deposit" ? (q.depositAmount ? q.depositAmount - paid : null) : balance != null ? Math.abs(balance) : null;
   const atReturn = q.status === "on_hire" || q.status === "closed" || !!q.returnDate;
-  const activity = isSuper ? await prisma.activityLog.findMany({ where: { targetType: "quote", targetId: id }, orderBy: { createdAt: "desc" }, take: 30 }) : [];
+  // open to everyone on the desk: who did what on this job
+  const activity = await prisma.activityLog.findMany({ where: { targetType: "quote", targetId: id }, orderBy: { createdAt: "desc" }, take: 60 });
+  const mine = !!session && q.ownerId === session.id;
   const hours = q.hourLogs.reduce((a, l) => a + l.hours, 0), standby = q.hourLogs.reduce((a, l) => a + l.standby, 0), fuel = q.hourLogs.reduce((a, l) => a + l.fuelL, 0);
   const meterRun = q.dispatchMeter != null && q.returnMeter != null ? q.returnMeter - q.dispatchMeter : null;
   const msg = `Hello ${q.name}, RINAMAS dispatch here regarding your request ${q.reference} for ${q.machineName}.`;
@@ -61,6 +67,29 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
 
       <Timeline status={q.status} />
 
+      <div className={`owner-bar${q.owner ? "" : " is-free"}`}>
+        <p>
+          {q.owner ? <>{mine ? <b>You are handling this request</b> : <>Handled by <b>{q.owner.name}</b></>}{q.ownedAt && <span className="muted"> since {fmtDate(q.ownedAt)}</span>}</>
+            : <><b>Not taken yet.</b> <span className="muted">The first person to work on it becomes its handler, or take it now.</span></>}
+        </p>
+        <div className="row-form">
+          {!mine && (
+            <form action={setOwner}><input type="hidden" name="id" value={q.id} /><input type="hidden" name="ownerId" value="me" />
+              <button className="btn btn-accent btn-sm" type="submit">{q.owner ? "Take it over" : "Take it"}</button></form>
+          )}
+          <form action={setOwner} className="row-form owner-hand">
+            <input type="hidden" name="id" value={q.id} />
+            <label className="f">Hand over to
+              <select name="ownerId" defaultValue={q.ownerId ?? ""}>
+                <option value="">Nobody (not taken)</option>
+                {staff.map((p) => <option key={p.id} value={p.id}>{p.name}{p.id === session?.id ? " (you)" : ""}</option>)}
+              </select>
+            </label>
+            <button className="btn btn-ghost btn-sm" type="submit">Save</button>
+          </form>
+        </div>
+      </div>
+
       <div className="grid-2">
         <section className="panel">
           <h3>Enquiry</h3>
@@ -73,7 +102,7 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
             <dt>Terms</dt><dd>{q.operator === "with" ? "Wet hire, operator supplied" : "Dry hire, customer's operator"} · {q.fuel === "with" ? "Fuel by RINAMAS, billed on hours" : "Customer buys fuel, full-to-full"}</dd>
             {q.notes && <><dt>Customer notes</dt><dd>“{q.notes}”</dd></>}
           </dl>
-          <QuoteStatusForm id={q.id} status={q.status} adminNote={q.adminNote} className="row-form" style={{ marginTop: "1rem" }} />
+          <QuoteStatusForm id={q.id} status={q.status} className="row-form" style={{ marginTop: "1rem" }} />
         </section>
 
         <form action={saveHire} className="panel" style={{ display: "grid", gap: ".9rem", alignContent: "start" }}>
@@ -104,6 +133,27 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
           <div><button className="btn btn-accent btn-sm" type="submit">Save hire details</button></div>
         </form>
       </div>
+
+      <section className="panel" id="notes" style={{ marginTop: "1.2rem" }}>
+        <div className="admin-top" style={{ marginBottom: ".6rem" }}><h3 style={{ margin: 0 }}>Desk notes</h3><span className="muted">{q.deskNotes.length} note{q.deskNotes.length === 1 ? "" : "s"}, newest first</span></div>
+        <form action={addNote} className="note-add">
+          <input type="hidden" name="quoteId" value={q.id} />
+          <label className="f">Add a note<textarea name="body" rows={2} maxLength={1000} required placeholder="Called, no answer. Customer wants Monday instead. MoMo promised by 3 pm." /></label>
+          <button className="btn btn-accent btn-sm" type="submit">Add note</button>
+        </form>
+        <ul className="notes">
+          {q.deskNotes.length === 0 && <li className="muted">No notes yet. Notes keep your name and the time, and never replace anyone else's.</li>}
+          {q.deskNotes.map((n) => (
+            <li key={n.id}>
+              <NoteByline authorName={n.authorName} createdAt={n.createdAt} />
+              <p>{n.body}</p>
+              {(n.staffId === session?.id || isSuper) && (
+                <form action={deleteNote}><input type="hidden" name="id" value={n.id} /><button className="link danger" type="submit">Remove</button></form>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section className="panel" style={{ marginTop: "1.2rem" }}>
         <div className="admin-top" style={{ marginBottom: ".6rem" }}>
@@ -237,15 +287,14 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
         <FinalBillForm id={q.id} canSettle={!!settlement?.ok} settleTotal={settlement?.ok ? settlement.total : null} current={q.finalAmount} />
       </section>
 
-      {isSuper && (
-        <section className="panel" style={{ marginTop: "1.2rem" }}>
-          <h3>Activity on this record</h3>
-          <ul className="activity">
-            {activity.length === 0 && <li className="muted">Nothing logged yet.</li>}
-            {activity.map((a) => <li key={a.id}><time>{fmtDate(a.createdAt)}</time><b>{a.actorName}</b><span>{a.summary}</span></li>)}
-          </ul>
-        </section>
-      )}
+      <section className="panel" id="history" style={{ marginTop: "1.2rem" }}>
+        <h3>Who did what</h3>
+        <p className="muted" style={{ marginTop: 0, fontSize: ".9rem" }}>Every change to this job, with the name of the person who made it. Everyone on the desk sees this.</p>
+        <ul className="activity">
+          {activity.length === 0 && <li className="muted">Nothing logged yet.</li>}
+          {activity.map((a) => <li key={a.id}><time>{fmtDate(a.createdAt)}</time><b>{a.actorName}</b><span>{a.summary.replace(`${q.reference}: `, "")}</span></li>)}
+        </ul>
+      </section>
     </>
   );
 }

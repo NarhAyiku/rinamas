@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { clearSessionCookie, getSession, requireSession, requireSuper, setSessionCookie, type Session } from "@/lib/auth";
+import { bumpSessionVersion, clearSessionCookie, getSession, requireSession, requireSuper, setSessionCookie, type Session } from "@/lib/auth";
+import { whereFrom } from "@/lib/device";
+import { rateLimiter } from "@/lib/ratelimit";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { logActivity } from "@/lib/activity";
 import { ALL_STATUSES, STATUS_LABEL, ghs } from "@/lib/format";
@@ -20,19 +22,35 @@ const str = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const num = (fd: FormData, k: string) => { const v = str(fd, k); return v === "" ? null : Number(v); };
 
 /* ---------- auth ---------- */
+const LOCK_AFTER = 5, LOCK_MINUTES = 15;
+const loginLimit = rateLimiter(30, 15 * 60_000); // per network, per server instance: a soft brake on guessing
+
 export async function login(_prev: { error?: string } | undefined, fd: FormData) {
   const username = str(fd, "username").toLowerCase();
   const password = String(fd.get("password") ?? "");
+  const from = await whereFrom();
+  if (loginLimit(from.ip)) return { error: "Too many sign-in attempts from this network. Wait 15 minutes and try again." };
   const staff = await prisma.staff.findUnique({ where: { username } });
-  const ok = staff && staff.active && verifyPassword(password, staff.passwordHash);
-  if (!ok) {
-    // keep timing similar whether or not the user exists
-    if (!staff) verifyPassword(password, "scrypt$00$00");
+  if (!staff || !staff.active) {
+    verifyPassword(password, "scrypt$00$00"); // keep timing similar whether or not the user exists
     return { error: "Wrong username or password." };
   }
-  await prisma.staff.update({ where: { id: staff.id }, data: { lastLoginAt: new Date() } });
-  await setSessionCookie(staff.id);
-  await logActivity({ id: staff.id, username: staff.username, name: staff.name, role: staff.role as Session["role"] }, "auth.login", `${staff.name} signed in`);
+  if (staff.lockedUntil && staff.lockedUntil > new Date()) {
+    const mins = Math.ceil((staff.lockedUntil.getTime() - Date.now()) / 60_000);
+    return { error: `Too many wrong passwords. This account is locked for ${mins} more minute${mins === 1 ? "" : "s"}. The super admin can unlock it by setting a new password.` };
+  }
+  if (!verifyPassword(password, staff.passwordHash)) {
+    const fails = staff.failedLogins + 1, lock = fails >= LOCK_AFTER;
+    await prisma.staff.update({ where: { id: staff.id }, data: lock ? { failedLogins: 0, lockedUntil: new Date(Date.now() + LOCK_MINUTES * 60_000) } : { failedLogins: fails } });
+    // logged as "system" with the account as target: a wrong password is not necessarily the account holder
+    await logActivity(null, lock ? "auth.locked" : "auth.fail", lock
+      ? `"${staff.username}" locked for ${LOCK_MINUTES} minutes after ${LOCK_AFTER} wrong passwords in a row (last from ${from.device}, ${from.ip})`
+      : `Wrong password for "${staff.username}" (${fails} of ${LOCK_AFTER}) from ${from.device}, ${from.ip}`, { type: "staff", id: staff.id });
+    return { error: lock ? `Too many wrong passwords. This account is locked for ${LOCK_MINUTES} minutes.` : "Wrong username or password." };
+  }
+  await prisma.staff.update({ where: { id: staff.id }, data: { lastLoginAt: new Date(), failedLogins: 0, lockedUntil: null } });
+  await setSessionCookie(staff.id, staff.sessionVersion);
+  await logActivity({ id: staff.id, username: staff.username, name: staff.name, role: staff.role as Session["role"] }, "auth.login", `${staff.name} signed in on ${from.device} (${from.ip})`, { type: "staff", id: staff.id });
   redirect("/admin");
 }
 
@@ -44,24 +62,74 @@ export async function logout() {
 }
 
 /* ---------- quote requests ---------- */
+const NOTE_MAX = 1000;
+
+/** The first person to work on a request (status, quote, hire details, money, hours) becomes its handler. Notes do not count. */
+async function claimIfFree(quoteId: string, reference: string, s: Session) {
+  const r = await prisma.quoteRequest.updateMany({ where: { id: quoteId, ownerId: null }, data: { ownerId: s.id, ownedAt: new Date() } });
+  if (r.count) await logActivity(s, "quote.owner", `${reference}: ${s.name} is now handling it (first to work on it)`, { type: "quote", id: quoteId });
+}
+
+/** Take a request, hand it to someone else, or leave it not taken. Anyone on the desk can do this; it is logged. */
+export async function setOwner(fd: FormData) {
+  const s = await requireSession();
+  const id = str(fd, "id");
+  const to = str(fd, "ownerId") === "me" ? s.id : str(fd, "ownerId");
+  const q = await prisma.quoteRequest.findUnique({ where: { id }, include: { owner: true } });
+  if (!q || (q.ownerId ?? "") === to) return;
+  const next = to ? await prisma.staff.findUnique({ where: { id: to } }) : null;
+  if (to && (!next || !next.active)) return;
+  await prisma.quoteRequest.update({ where: { id }, data: { ownerId: next?.id ?? null, ownedAt: next ? new Date() : null } });
+  const was = q.owner?.name;
+  const summary = !next ? `${q.reference}: ${was ?? "nobody"} no longer handling it, now not taken`
+    : next.id === s.id ? `${q.reference}: ${s.name} took it${was ? ` over from ${was}` : ""}`
+    : `${q.reference}: handed ${was ? `from ${was} ` : ""}to ${next.name}`;
+  await logActivity(s, "quote.owner", summary, { type: "quote", id });
+  revalidatePath("/admin"); revalidatePath(`/admin/requests/${id}`);
+}
+
+/** Desk notes stack up with the writer's name. Nobody's note is overwritten. */
+export async function addNote(fd: FormData) {
+  const s = await requireSession();
+  const quoteId = str(fd, "quoteId"), body = str(fd, "body").slice(0, NOTE_MAX);
+  if (!body) return;
+  const q = await prisma.quoteRequest.findUnique({ where: { id: quoteId } });
+  if (!q) return;
+  await prisma.quoteNote.create({ data: { quoteId, body, staffId: s.id, authorName: s.name } });
+  await logActivity(s, "quote.note", `${q.reference}: note "${body}"`, { type: "quote", id: quoteId });
+  revalidatePath("/admin"); revalidatePath(`/admin/requests/${quoteId}`);
+}
+
+/** The writer can remove their own note; the super admin can remove any. The text stays in the activity log. */
+export async function deleteNote(fd: FormData) {
+  const s = await requireSession();
+  const n = await prisma.quoteNote.findUnique({ where: { id: str(fd, "id") }, include: { quote: true } });
+  if (!n || (n.staffId !== s.id && s.role !== "superadmin")) return;
+  await prisma.quoteNote.delete({ where: { id: n.id } });
+  await logActivity(s, "quote.note", `${n.quote.reference}: removed ${n.staffId === s.id ? "own" : `${n.authorName}'s`} note "${n.body}"`, { type: "quote", id: n.quoteId });
+  revalidatePath("/admin"); revalidatePath(`/admin/requests/${n.quoteId}`);
+}
+
 export async function updateQuote(fd: FormData) {
   const s = await requireSession();
   const id = str(fd, "id");
   const status = str(fd, "status");
-  const adminNote = str(fd, "adminNote") || null;
+  const note = str(fd, "note").slice(0, NOTE_MAX);
   if (!(ALL_STATUSES as readonly string[]).includes(status)) return;
   const before = await prisma.quoteRequest.findUnique({ where: { id }, include: { payments: true } });
   if (!before) return;
   // A job cannot be closed without money on it: the final bill is what the books count.
   if (status === "closed" && before.status !== "closed" && before.finalAmount == null) redirect(`/admin/requests/${id}?error=close-needs-bill`);
-  await prisma.quoteRequest.update({ where: { id }, data: { status, adminNote } });
+  if (before.status !== status) await prisma.quoteRequest.update({ where: { id }, data: { status } });
+  if (note) await prisma.quoteNote.create({ data: { quoteId: id, body: note, staffId: s.id, authorName: s.name } });
   const changes: string[] = [];
   if (before.status !== status) {
     const owed = status === "closed" ? balanceOf(before, before.payments) : null;
     changes.push(`status ${STATUS_LABEL[before.status]} → ${STATUS_LABEL[status]}${owed ? (owed > 0 ? ` with ${ghs(owed)} still owed` : ` with ${ghs(-owed)} to refund`) : ""}`);
   }
-  if ((before.adminNote ?? "") !== (adminNote ?? "")) changes.push(adminNote ? `note "${adminNote}"` : "note cleared");
+  if (note) changes.push(`note "${note}"`);
   if (changes.length) await logActivity(s, "quote.update", `${before.reference}: ${changes.join(", ")}`, { type: "quote", id });
+  if (before.status !== status) await claimIfFree(id, before.reference, s);
   revalidatePath("/admin"); revalidatePath(`/admin/requests/${id}`); revalidatePath(`/quote/${id}`);
 }
 
@@ -98,7 +166,7 @@ export async function saveHire(fd: FormData) {
     const a = before[k] ?? null, b = d[k] ?? null;
     if (String(a ?? "") !== String(b ?? "")) diffs.push(`${label[k]} → ${typeof b === "number" && (k === "quotedAmount" || k === "depositAmount") ? ghs(b) : (b ?? "cleared")}`);
   }
-  if (diffs.length) await logActivity(s, "quote.hire", `${before.reference}: ${diffs.join("; ")}`, { type: "quote", id });
+  if (diffs.length) { await logActivity(s, "quote.hire", `${before.reference}: ${diffs.join("; ")}`, { type: "quote", id }); await claimIfFree(id, before.reference, s); }
   revalidatePath(`/admin/requests/${id}`); revalidatePath(`/quote/${id}`); revalidatePath("/admin"); revalidatePath("/admin/finance");
 }
 
@@ -130,6 +198,7 @@ export async function recordPayment(_prev: MoneyState, fd: FormData): Promise<Mo
   const after = balanceOf(q, [...q.payments, d]);
   const via = `${PAYMENT_METHODS[d.method]}${d.reference ? ` ref ${d.reference}` : ""}`;
   await logActivity(s, "payment.add", `${q.reference}: ${PAYMENT_KINDS[d.kind].toLowerCase()} ${d.kind === "refund" ? "paid out" : "received"} ${ghs(d.amount)} by ${via} on ${d.paidAt}${after != null ? `; balance → ${ghs(after)}` : ""}`, { type: "quote", id: q.id });
+  await claimIfFree(q.id, q.reference, s);
   revalidateMoney(q.id);
   return { ok: `${PAYMENT_KINDS[d.kind]} of ${ghs(d.amount)} recorded.` };
 }
@@ -173,6 +242,7 @@ export async function setFinalBill(_prev: MoneyState, fd: FormData): Promise<Mon
   await prisma.quoteRequest.update({ where: { id }, data: { finalAmount: amount, finalJson, finalSetAt: new Date(), finalSetBy: s.name } });
   const after = balanceOf({ finalAmount: amount, quotedAmount: q.quotedAmount }, q.payments);
   await logActivity(s, "quote.final", `${q.reference}: final bill ${q.finalAmount != null ? `${ghs(q.finalAmount)} → ` : ""}${ghs(amount)} ${how}${bill != null && q.finalAmount == null ? ` (quoted ${ghs(bill)})` : ""}${reason ? `, "${reason}"` : ""}; balance ${ghs(after ?? amount)}`, { type: "quote", id });
+  await claimIfFree(id, q.reference, s);
   revalidateMoney(id);
   return { ok: `Final bill set at ${ghs(amount)}.` };
 }
@@ -187,6 +257,7 @@ export async function addHourLog(fd: FormData) {
   if (!q) return;
   await prisma.hourLog.create({ data: { quoteId, date, hours, standby, fuelL, note: str(fd, "note") || null, loggedBy: s.name } });
   await logActivity(s, "hourlog.add", `${q.reference}: ${date} ${hours} h worked, ${standby} h standby, ${fuelL} L fuel`, { type: "quote", id: quoteId });
+  await claimIfFree(quoteId, q.reference, s);
   revalidatePath(`/admin/requests/${quoteId}`); revalidatePath(`/quote/${quoteId}`);
 }
 
@@ -312,7 +383,7 @@ export async function setStaffActive(fd: FormData) {
   const id = str(fd, "id");
   const active = str(fd, "active") === "1";
   if (id === s.id) return; // cannot deactivate yourself
-  const st = await prisma.staff.update({ where: { id }, data: { active } });
+  const st = await prisma.staff.update({ where: { id }, data: { active, ...(active ? {} : { sessionVersion: { increment: 1 } }) } });
   await logActivity(s, "staff.active", `${active ? "Reactivated" : "Deactivated"} "${st.username}"`, { type: "staff", id });
   revalidatePath("/admin/staff");
 }
@@ -322,9 +393,11 @@ export async function resetStaffPassword(_prev: { error?: string; ok?: string } 
   const id = str(fd, "id");
   const password = String(fd.get("password") ?? "");
   if (password.length < 8) return { error: "Password must be at least 8 characters." };
-  const st = await prisma.staff.update({ where: { id }, data: { passwordHash: hashPassword(password) } });
-  await logActivity(s, "staff.password", `Reset password for "${st.username}"`, { type: "staff", id });
-  return { ok: `Password updated for ${st.username}.` };
+  // a reset also unlocks the account and signs it out on every device
+  const st = await prisma.staff.update({ where: { id }, data: { passwordHash: hashPassword(password), sessionVersion: { increment: 1 }, failedLogins: 0, lockedUntil: null } });
+  if (st.id === s.id) await setSessionCookie(st.id, st.sessionVersion);
+  await logActivity(s, "staff.password", `Reset password for "${st.username}"; signed out on every device${st.id === s.id ? " except this one" : ""}`, { type: "staff", id });
+  return { ok: st.id === s.id ? "Your password is updated. Your other devices are signed out." : `Password updated for ${st.username}. They are signed out everywhere and must sign in with the new password.` };
 }
 
 export async function changeOwnPassword(_prev: { error?: string; ok?: string } | undefined, fd: FormData) {
@@ -333,9 +406,19 @@ export async function changeOwnPassword(_prev: { error?: string; ok?: string } |
   const me = await prisma.staff.findUnique({ where: { id: s.id } });
   if (!me || !verifyPassword(current, me.passwordHash)) return { error: "Current password is wrong." };
   if (next.length < 8) return { error: "New password must be at least 8 characters." };
-  await prisma.staff.update({ where: { id: s.id }, data: { passwordHash: hashPassword(next) } });
-  await logActivity(s, "staff.password", `${s.name} changed their own password`, { type: "staff", id: s.id });
-  return { ok: "Password changed." };
+  const me2 = await prisma.staff.update({ where: { id: s.id }, data: { passwordHash: hashPassword(next), sessionVersion: { increment: 1 } } });
+  await setSessionCookie(s.id, me2.sessionVersion); // keep this device signed in; every other one is now signed out
+  await logActivity(s, "staff.password", `${s.name} changed their own password; other devices signed out`, { type: "staff", id: s.id });
+  return { ok: "Password changed. Any other phone or computer signed in as you has been signed out." };
+}
+
+export async function signOutOtherDevices(_prev: { error?: string; ok?: string } | undefined, _fd: FormData) {
+  const s = await requireSession();
+  const v = await bumpSessionVersion(s.id);
+  await setSessionCookie(s.id, v);
+  const from = await whereFrom();
+  await logActivity(s, "auth.others", `${s.name} signed out every other device (kept ${from.device})`, { type: "staff", id: s.id });
+  return { ok: "Done. Only this device is signed in as you now." };
 }
 
 /* ---------- pricing display and hire rules ---------- */
@@ -518,6 +601,7 @@ export async function applyEstimate(_prev: ApplyEstimateState, fd: FormData): Pr
   if (setDeposit) parts.push(`deposit → ${ghs(est.deposit)}`);
   if (machineChanged) parts.push(`machine ${q.machineName} → ${machine.name}`);
   await logActivity(s, "quote.hire", `${q.reference}: ${parts.join("; ")}`, { type: "quote", id: quoteId });
+  await claimIfFree(quoteId, q.reference, s);
   revalidatePath(`/admin/requests/${quoteId}`); revalidatePath(`/quote/${quoteId}`); revalidatePath("/admin"); revalidatePath("/admin/calculator");
   return { ok: `${q.reference} quoted at ${ghs(est.total)}${setDeposit ? `, deposit ${ghs(est.deposit)}` : ""}.` };
 }

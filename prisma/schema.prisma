@@ -45,7 +45,13 @@ model QuoteRequest {
   phone       String
   notes       String?
   status      String   @default("new") // new | quoted | confirmed | on_hire | closed | lost
-  adminNote   String?
+  adminNote   String?  // legacy single note; desk notes are QuoteNote rows now (moved by prisma/backfill-notes.mjs)
+
+  // who on the desk is handling this request; set when someone first works on it, handed over on the record
+  ownerId     String?
+  owner       Staff?   @relation("QuoteOwner", fields: [ownerId], references: [id])
+  ownedAt     DateTime?
+  deskNotes   QuoteNote[]
   source      String   @default("form") // form | chat: where the request came from (website form or the Ask RINAMAS chat)
 
   // estimator inputs and the indicative figure shown to the customer (snapshot of lines and rules)
@@ -116,6 +122,20 @@ model HourLog {
   createdAt DateTime @default(now())
 }
 
+// A desk note on a hire record. Notes stack up with the writer's name; nothing overwrites another person's note.
+model QuoteNote {
+  id         String   @id @default(cuid())
+  quoteId    String
+  quote      QuoteRequest @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  staffId    String?
+  staff      Staff?   @relation(fields: [staffId], references: [id])
+  authorName String
+  body       String
+  createdAt  DateTime @default(now())
+
+  @@index([quoteId, createdAt])
+}
+
 model Staff {
   id           String   @id @default(cuid())
   username     String   @unique
@@ -124,8 +144,14 @@ model Staff {
   passwordHash String
   active       Boolean  @default(true)
   lastLoginAt  DateTime?
+  // bumped on password change, reset, "sign out other devices" and deactivation: older session cookies stop working
+  sessionVersion Int    @default(0)
+  failedLogins Int      @default(0)   // wrong passwords in a row; 5 locks the account for 15 minutes
+  lockedUntil  DateTime?
   createdAt    DateTime @default(now())
   activities   ActivityLog[]
+  handling     QuoteRequest[] @relation("QuoteOwner")
+  notes        QuoteNote[]
 }
 
 // Everything staff do, for the super admin to review

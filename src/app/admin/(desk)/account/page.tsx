@@ -1,20 +1,40 @@
-"use client";
-import { useActionState } from "react";
-import { changeOwnPassword } from "@/app/admin/actions";
-import { PasswordInput } from "@/components/PasswordInput";
+import { prisma } from "@/lib/db";
+import { requireSession } from "@/lib/auth";
+import { fmtDate } from "@/lib/format";
+import { PasswordForm, SignOutOthersForm } from "./forms";
 
-export default function AccountPage() {
-  const [state, action, pending] = useActionState(changeOwnPassword, undefined);
+export const dynamic = "force-dynamic";
+
+export default async function AccountPage() {
+  const s = await requireSession();
+  // sign-ins, wrong passwords, locks and resets on this account: enough to notice someone else using it
+  const events = await prisma.activityLog.findMany({
+    where: { OR: [
+      { staffId: s.id, action: { startsWith: "auth." } },
+      { targetType: "staff", targetId: s.id, action: { in: ["auth.fail", "auth.locked", "staff.password"] } },
+    ] },
+    orderBy: { createdAt: "desc" }, take: 15,
+  });
   return (
     <>
-      <div className="admin-top"><div><p className="eyebrow">Account</p><h2>Change my password</h2></div></div>
-      <form className="panel" action={action} style={{ maxWidth: 460, display: "grid", gap: "1rem" }}>
-        <label className="f">Current password<PasswordInput name="current" autoComplete="current-password" required /></label>
-        <label className="f">New password<PasswordInput name="next" autoComplete="new-password" minLength={8} required /></label>
-        {state?.error && <p className="err" role="alert">{state.error}</p>}
-        {state?.ok && <p className="ok" role="status">{state.ok}</p>}
-        <button className="btn btn-accent" type="submit" disabled={pending}>{pending ? "Saving…" : "Update password"}</button>
-      </form>
+      <div className="admin-top"><div><p className="eyebrow">Account</p><h2>{s.name}</h2><p className="muted">Signed in as <b>{s.username}</b> · {s.role === "superadmin" ? "Super admin" : "Admin"}</p></div></div>
+      <div className="grid-2">
+        <PasswordForm />
+        <section className="panel">
+          <h3>Sign-ins on this account</h3>
+          <SignOutOthersForm />
+          <ul className="activity signins" style={{ marginTop: "1rem" }}>
+            {events.length === 0 && <li className="muted">Nothing recorded yet.</li>}
+            {events.map((e) => (
+              <li key={e.id} className={e.action === "auth.fail" || e.action === "auth.locked" ? "warn" : ""}>
+                <time>{fmtDate(e.createdAt)}</time>
+                <span>{e.summary}{e.actorName !== s.name && e.action === "staff.password" ? ` (by ${e.actorName})` : ""}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="hint" style={{ marginTop: "1rem" }}>Wrong passwords show here too. Five in a row locks the account for 15 minutes; the super admin can unlock it by setting a new password.</p>
+        </section>
+      </div>
     </>
   );
 }

@@ -17,38 +17,47 @@ function secret() {
 }
 const sign = (payload: string) => createHmac("sha256", secret()).update(payload).digest("base64url");
 
-export function makeSessionToken(staffId: string) {
+/** Cookie value: staffId.sessionVersion.expiry.signature. Bumping Staff.sessionVersion invalidates every older cookie. */
+export function makeSessionToken(staffId: string, version: number) {
   const exp = Math.floor(Date.now() / 1000) + TTL_SECONDS;
-  const payload = `${staffId}.${exp}`;
+  const payload = `${staffId}.${version}.${exp}`;
   return `${payload}.${sign(payload)}`;
 }
 
-export function readSessionToken(token: string | undefined): string | null {
+export function readSessionToken(token: string | undefined): { id: string; version: number } | null {
   if (!token) return null;
   const parts = token.split(".");
-  if (parts.length !== 3) return null;
-  const [id, exp, sig] = parts;
-  const expected = sign(`${id}.${exp}`);
+  if (parts.length !== 4) return null;
+  const [id, ver, exp, sig] = parts;
+  const expected = sign(`${id}.${ver}.${exp}`);
   if (sig.length !== expected.length || !timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
   if (Number(exp) <= Math.floor(Date.now() / 1000)) return null;
-  return id;
+  const version = Number(ver);
+  if (!Number.isInteger(version)) return null;
+  return { id, version };
 }
 
 /** Current signed-in staff member, or null. Cached per request. */
 export const getSession = cache(async (): Promise<Session | null> => {
   const store = await cookies();
-  const id = readSessionToken(store.get(COOKIE)?.value);
-  if (!id) return null;
-  const s = await prisma.staff.findUnique({ where: { id } });
-  if (!s || !s.active) return null;
+  const tok = readSessionToken(store.get(COOKIE)?.value);
+  if (!tok) return null;
+  const s = await prisma.staff.findUnique({ where: { id: tok.id } });
+  if (!s || !s.active || s.sessionVersion !== tok.version) return null;
   return { id: s.id, username: s.username, name: s.name, role: s.role as Role };
 });
 
-export async function setSessionCookie(staffId: string) {
+export async function setSessionCookie(staffId: string, version: number) {
   const store = await cookies();
-  store.set(COOKIE, makeSessionToken(staffId), {
+  store.set(COOKIE, makeSessionToken(staffId, version), {
     httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: TTL_SECONDS,
   });
+}
+
+/** Signs this account out everywhere: every cookie issued before now stops working. Returns the new version. */
+export async function bumpSessionVersion(staffId: string) {
+  const s = await prisma.staff.update({ where: { id: staffId }, data: { sessionVersion: { increment: 1 } }, select: { sessionVersion: true } });
+  return s.sessionVersion;
 }
 
 export async function clearSessionCookie() {
