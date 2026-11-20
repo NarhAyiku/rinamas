@@ -4,7 +4,7 @@ import { getSession } from "@/lib/auth";
 import { NoteByline, QuoteStatusForm, StatusPill } from "@/components/StatusBits";
 import { setOwner } from "@/app/admin/actions";
 import { after } from "next/server";
-import { WAIT_HOURS, alertWaiting, waitingWhere } from "@/lib/notify";
+import { EMAIL_ALERTS_ENABLED, WAIT_HOURS, alertWaiting, waitingWhere } from "@/lib/notify";
 import { balanceOf } from "@/lib/settle";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +37,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
     prisma.quoteRequest.count({ where: waitingWhere() }),
   ]);
   // a desk load is also a chance to send the waiting-request email (the scheduled check is the main one)
-  if (waiting) after(() => alertWaiting().catch((e) => console.error("alertWaiting", e)));
+  if (waiting && EMAIL_ALERTS_ENABLED) after(() => alertWaiting().catch((e) => console.error("alertWaiting", e)));
   const href = (p: { status?: string; q?: string; who?: string | null }) => {
     const u = new URLSearchParams();
     if (p.status) u.set("status", p.status); if (p.q) u.set("q", p.q); if (p.who) u.set("who", p.who);

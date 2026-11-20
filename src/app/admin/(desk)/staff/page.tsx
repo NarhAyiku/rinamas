@@ -3,6 +3,7 @@ import { requireSuper } from "@/lib/auth";
 import { fmtDate } from "@/lib/format";
 import { setStaffActive } from "@/app/admin/actions";
 import { StaffForms } from "./forms";
+import { EMAIL_ALERTS_ENABLED } from "@/lib/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -16,14 +17,14 @@ export default async function StaffPage() {
       <p className="lede" style={{ marginBottom: "1.4rem" }}>Admins run the dispatch desk: requests, hire records, hour logs and the fleet. Super admins see everything admins do, plus finance, this page and the full activity log. Everyone sees who did what on each hire record. Setting a new password also unlocks an account and signs it out on every device.</p>
       <div className="tablewrap">
         <table className="compact">
-          <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Last sign-in</th><th>Alert email</th><th>Handling now</th><th>Actions logged</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Last sign-in</th>{EMAIL_ALERTS_ENABLED && <th>Alert email</th>}<th>Handling now</th><th>Actions logged</th><th>Status</th><th></th></tr></thead>
           <tbody>
             {staff.map((s) => (
               <tr key={s.id}>
                 <td><b>{s.name}</b></td><td className="num">{s.username}</td>
                 <td><span className={`pill ${s.role === "superadmin" ? "pill-on_hire" : "pill-quoted"}`}><i aria-hidden="true" />{s.role === "superadmin" ? "Super admin" : "Admin"}</span></td>
                 <td className="num">{s.lastLoginAt ? fmtDate(s.lastLoginAt) : "never"}</td>
-                <td>{s.email ? <span className={s.alerts ? "" : "muted"} title={s.alerts ? "Alerts on" : "Alerts turned off by them"}>{s.email}{s.alerts ? "" : " (off)"}</span> : <span className="muted">none</span>}</td><td className="num">{s._count.handling}</td><td className="num">{s._count.activities}</td>
+                {EMAIL_ALERTS_ENABLED && <td>{s.email ? <span className={s.alerts ? "" : "muted"} title={s.alerts ? "Alerts on" : "Alerts turned off by them"}>{s.email}{s.alerts ? "" : " (off)"}</span> : <span className="muted">none</span>}</td>}<td className="num">{s._count.handling}</td><td className="num">{s._count.activities}</td>
                 <td>{!s.active ? <span className="pill pill-closed"><i aria-hidden="true" />Deactivated</span>
                   : s.lockedUntil && s.lockedUntil > now ? <span className="pill pill-lost" title="Too many wrong passwords. Set a new password below to unlock now."><i aria-hidden="true" />Locked to {fmtDate(s.lockedUntil)}</span>
                   : <span className="pill pill-confirmed"><i aria-hidden="true" />Active</span>}</td>
@@ -38,7 +39,7 @@ export default async function StaffPage() {
           </tbody>
         </table>
       </div>
-      <StaffForms staff={staff.map((s) => ({ id: s.id, name: s.name, username: s.username, email: s.email }))} />
+      <StaffForms staff={staff.map((s) => ({ id: s.id, name: s.name, username: s.username, email: s.email }))} emailOn={EMAIL_ALERTS_ENABLED} />
     </>
   );
 }

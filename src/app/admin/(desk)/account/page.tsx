@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
 import { fmtDate } from "@/lib/format";
 import { AlertsForm, PasswordForm, SignOutOthersForm } from "./forms";
-import { emailReady } from "@/lib/notify";
+import { EMAIL_ALERTS_ENABLED, emailReady } from "@/lib/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +22,7 @@ export default async function AccountPage() {
       <div className="admin-top"><div><p className="eyebrow">Account</p><h2>{s.name}</h2><p className="muted">Signed in as <b>{s.username}</b> · {s.role === "superadmin" ? "Super admin" : "Admin"}</p></div></div>
       <div className="grid-2">
         <div style={{ display: "grid", gap: "1.2rem", alignContent: "start" }}>
-          <AlertsForm email={me?.email ?? null} alerts={me?.alerts ?? true} ready={emailReady()} />
+          {EMAIL_ALERTS_ENABLED && <AlertsForm email={me?.email ?? null} alerts={me?.alerts ?? true} ready={emailReady()} />}
           <PasswordForm />
         </div>
         <section className="panel">

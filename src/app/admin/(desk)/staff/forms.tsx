@@ -3,7 +3,7 @@ import { useActionState } from "react";
 import { createStaff, resetStaffPassword, setStaffEmail } from "@/app/admin/actions";
 import { PasswordInput } from "@/components/PasswordInput";
 
-export function StaffForms({ staff }: { staff: { id: string; name: string; username: string; email: string | null }[] }) {
+export function StaffForms({ staff, emailOn }: { staff: { id: string; name: string; username: string; email: string | null }[]; emailOn: boolean }) {
   const [c, createAction, creating] = useActionState(createStaff, undefined);
   const [r, resetAction, resetting] = useActionState(resetStaffPassword, undefined);
   const [e, emailAction, savingEmail] = useActionState(setStaffEmail, undefined);
@@ -16,7 +16,7 @@ export function StaffForms({ staff }: { staff: { id: string; name: string; usern
           <label className="f">Username<input name="username" pattern="[a-z0-9._-]{3,30}" autoCapitalize="none" required /></label>
           <label className="f">Role<select name="role" defaultValue="admin"><option value="admin">Admin (front desk)</option><option value="superadmin">Super admin</option></select></label>
           <label className="f">Temporary password<PasswordInput name="password" minLength={8} autoComplete="new-password" required /></label>
-          <label className="f">Email for alerts (optional)<input name="email" type="email" autoComplete="off" /></label>
+          {emailOn && <label className="f">Email for alerts (optional)<input name="email" type="email" autoComplete="off" /></label>}
         </div>
         {c?.error && <p className="err" role="alert">{c.error}</p>}
         {c?.ok && <p className="ok" role="status">{c.ok}</p>}
@@ -32,7 +32,7 @@ export function StaffForms({ staff }: { staff: { id: string; name: string; usern
         {r?.ok && <p className="ok" role="status">{r.ok}</p>}
         <div><button className="btn btn-ghost btn-sm" type="submit" disabled={resetting}>{resetting ? "Saving…" : "Set password"}</button></div>
       </form>
-      <form className="panel" action={emailAction} style={{ display: "grid", gap: ".9rem", alignContent: "start" }}>
+      {emailOn && <form className="panel" action={emailAction} style={{ display: "grid", gap: ".9rem", alignContent: "start" }}>
         <h3>Set an alert email</h3>
         <p className="hint" style={{ margin: 0 }}>Each person can set their own under My account. Use this for anyone who hasn&apos;t.</p>
         <div className="inline-form">
@@ -42,7 +42,7 @@ export function StaffForms({ staff }: { staff: { id: string; name: string; usern
         {e?.error && <p className="err" role="alert">{e.error}</p>}
         {e?.ok && <p className="ok" role="status">{e.ok}</p>}
         <div><button className="btn btn-ghost btn-sm" type="submit" disabled={savingEmail}>{savingEmail ? "Saving…" : "Save email"}</button></div>
-      </form>
+      </form>}
     </div>
   );
 }

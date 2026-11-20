@@ -5,6 +5,14 @@ import { prisma } from "./db";
 import { logActivity } from "./activity";
 import type { Session } from "./auth";
 
+/**
+ * ON HOLD (owner's decision, 20 Nov 2026): no alert emails are sent and the email settings are hidden.
+ * To switch back on: set this to true, install Resend on the Vercel project (RESEND_API_KEY), verify rinamas.com in
+ * Resend and set ALERT_FROM, set CRON_SECRET in Vercel and GitHub, and uncomment the schedule in
+ * .github/workflows/desk-alerts.yml. The desk banner and "Handed to you by" labels do not depend on this.
+ */
+export const EMAIL_ALERTS_ENABLED = false;
+
 export const WAIT_HOURS = 2;
 /** Alerts for waiting requests go out between these Accra hours (Accra is UTC+0 all year). Overnight requests alert from 07:00. */
 export const ALERT_FROM_HOUR = 7, ALERT_TO_HOUR = 20;
@@ -13,9 +21,10 @@ const siteUrl = () => (process.env.NEXT_PUBLIC_SITE_URL || "https://rinamas.com"
 
 export type SendResult = { sent: true; id?: string } | { sent: false; reason: string };
 
-export function emailReady() { return !!process.env.RESEND_API_KEY; }
+export function emailReady() { return EMAIL_ALERTS_ENABLED && !!process.env.RESEND_API_KEY; }
 
 export async function sendEmail(to: string[], subject: string, text: string, html: string): Promise<SendResult> {
+  if (!EMAIL_ALERTS_ENABLED) return { sent: false, reason: "email alerts are on hold" };
   const key = process.env.RESEND_API_KEY;
   if (!key) return { sent: false, reason: "email not set up (RESEND_API_KEY missing)" };
   if (!to.length) return { sent: false, reason: "nobody has an alert email" };
@@ -82,6 +91,7 @@ export function inAlertHours(now = new Date()) {
  * Safe to call often (cron, desk loads): each request is claimed for alerting before sending, so two runs never double-send.
  */
 export async function alertWaiting(now = new Date()) {
+  if (!EMAIL_ALERTS_ENABLED) return { checked: 0, alerted: 0, result: { sent: false, reason: "email alerts are on hold" } as SendResult };
   if (!inAlertHours(now)) return { checked: 0, alerted: 0, result: { sent: false, reason: "outside alert hours" } as SendResult };
   const due = await prisma.quoteRequest.findMany({ where: { ...waitingWhere(now), waitAlertAt: null }, orderBy: { createdAt: "asc" } });
   if (!due.length) return { checked: 0, alerted: 0, result: { sent: false, reason: "nothing waiting" } as SendResult };

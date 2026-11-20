@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { bumpSessionVersion, clearSessionCookie, getSession, requireSession, requireSuper, setSessionCookie, type Session } from "@/lib/auth";
 import { whereFrom } from "@/lib/device";
 import { rateLimiter } from "@/lib/ratelimit";
-import { notifyHandover } from "@/lib/notify";
+import { EMAIL_ALERTS_ENABLED, notifyHandover } from "@/lib/notify";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { logActivity } from "@/lib/activity";
 import { ALL_STATUSES, STATUS_LABEL, ghs } from "@/lib/format";
@@ -83,7 +83,7 @@ export async function setOwner(fd: FormData) {
   const handed = !!next && next.id !== s.id;
   await prisma.quoteRequest.update({ where: { id }, data: { ownerId: next?.id ?? null, ownedAt: next ? new Date() : null, handedByName: handed ? s.name : null } });
   const was = q.owner?.name;
-  const mail = handed ? await notifyHandover(id, s, next.id) : null;
+  const mail = handed && EMAIL_ALERTS_ENABLED ? await notifyHandover(id, s, next.id) : null; // email on hold: see notify.ts
   const summary = !next ? `${q.reference}: ${was ?? "nobody"} no longer handling it, now not taken`
     : next.id === s.id ? `${q.reference}: ${s.name} took it${was ? ` over from ${was}` : ""}`
     : `${q.reference}: handed ${was ? `from ${was} ` : ""}to ${next.name}${mail?.sent ? "; emailed them" : mail ? ` (not emailed: ${mail.reason})` : ""}`;

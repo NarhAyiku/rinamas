@@ -1,10 +1,12 @@
 # Every 15 minutes, ask rinamas.com to email staff about hire requests nobody has taken for 2 hours.
 # The site only emails between 07:00 and 20:00 Accra time and only once per request; this just knocks.
 # Needs the repository secret CRON_SECRET (same value as the CRON_SECRET env var on Vercel).
+# ON HOLD (20 Nov 2026): email alerts are switched off (EMAIL_ALERTS_ENABLED in src/lib/notify.ts), so the schedule
+# is commented out. Uncomment the two schedule lines when they are switched back on.
 name: Desk alerts
 on:
-  schedule:
-    - cron: "*/15 * * * *"
+  # schedule:
+  #   - cron: "*/15 * * * *"
   workflow_dispatch:
 permissions: {}
 jobs:
