@@ -1,0 +1,144 @@
+<!doctype html>
+<!-- RINAMAS print designs. All units are millimetres (SVG user units = mm). Rendered to PDF/PNG by render.mjs.
+     Open with #banner, #sticker-wide or #sticker-square to show one design. -->
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800;900&family=Barlow:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=block">
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; background: #fff; }
+  svg { display: none; }
+  svg.on { display: block; }
+  .bs { font-family: "Big Shoulders Display", Impact, sans-serif; }
+  .bw { font-family: Barlow, Arial, sans-serif; }
+  .mono { font-family: "IBM Plex Mono", Menlo, monospace; }
+</style>
+</head>
+<body>
+
+<!-- shared pieces -->
+<svg width="0" height="0" style="position:absolute;display:block" aria-hidden="true">
+  <defs>
+    <linearGradient id="gv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFCD11"/><stop offset="1" stop-color="#FCB026"/></linearGradient>
+    <linearGradient id="gh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FCB026"/><stop offset="1" stop-color="#FFCD11"/></linearGradient>
+    <!-- the badge, 72 x 64 units like public/brand/rinamas-badge.svg -->
+    <clipPath id="hexclip"><path d="M20 2 H52 L68 32 L52 62 H20 L4 32Z"/></clipPath>
+    <g id="badge">
+      <g clip-path="url(#hexclip)"><g class="hz" data-x="0" data-y="0" data-w="72" data-h="64" data-p="22" data-dark="#23262A"></g></g>
+      <path d="M20 2 H52 L68 32 L52 62 H20 L4 32Z" fill="none" stroke="#111214" stroke-width="3"/>
+      <rect x="4" y="24" width="64" height="16" fill="#111214"/>
+      <text x="36" y="36.5" text-anchor="middle" class="bs" font-weight="900" font-size="13" letter-spacing="1" fill="#FFCD11">RINAMAS</text>
+    </g>
+  </defs>
+</svg>
+
+<!-- ============ BANNER 3000 x 1000 mm ============ -->
+<svg id="banner" viewBox="0 0 3000 1000" width="3000mm" height="1000mm" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+  </defs>
+  <rect width="3000" height="1000" fill="#1A1C1F"/>
+  <g class="hz" data-x="0" data-y="0" data-w="3000" data-h="64" data-p="113"></g>
+  <g class="hz" data-x="0" data-y="936" data-w="3000" data-h="64" data-p="113"></g>
+
+  <use href="#badge" transform="translate(110 245) scale(7.4)"/>
+
+  <text x="740" y="395" class="bs" font-weight="900" font-size="330" letter-spacing="8" fill="#FFCD11" data-fit="1240">RINAMAS</text>
+  <text x="748" y="470" class="mono" font-weight="500" font-size="44" letter-spacing="9" fill="#EDE6DA" data-fit="1230">EQUIPMENT &amp; TRADING ENTERPRISE</text>
+  <rect x="748" y="512" width="160" height="10" fill="url(#gh)"/>
+  <text x="744" y="645" class="bs" font-weight="800" font-size="110" letter-spacing="3" fill="#FFFFFF" data-fit="1230">HEAVY EQUIPMENT FOR HIRE</text>
+  <text x="748" y="722" class="bw" font-weight="500" font-size="46" fill="#EDE6DA" data-fit="1230">With or without operator. Low bed delivery to your site.</text>
+  <text x="748" y="800" class="bw" font-weight="600" font-size="42" fill="#A9A094" data-fit="1230">Yard: Accra-Tema Motorway, Accra · Mon to Sat, 08:00 to 18:00</text>
+
+  <!-- call panel -->
+  <rect x="2060" y="130" width="840" height="700" rx="24" fill="url(#gv)"/>
+  <text x="2480" y="225" text-anchor="middle" class="mono" font-weight="600" font-size="40" letter-spacing="8" fill="#1A1C1F">CALL OR WHATSAPP</text>
+  <text x="2480" y="400" text-anchor="middle" class="bs" font-weight="900" font-size="190" letter-spacing="2" fill="#1A1C1F" data-fit="780">024 351 8749</text>
+  <text x="2480" y="475" text-anchor="middle" class="bw" font-weight="700" font-size="54" fill="#1A1C1F" data-fit="780">Office 024 927 6713</text>
+  <rect x="2120" y="525" width="250" height="250" rx="12" fill="#FFFFFF"/>
+  <g class="qr" data-url="https://rinamas.com/?utm_source=banner" data-x="2135" data-y="540" data-size="220"></g>
+  <text x="2410" y="620" class="bw" font-weight="700" font-size="44" fill="#1A1C1F">Scan for prices</text>
+  <text x="2410" y="675" class="bw" font-weight="700" font-size="44" fill="#1A1C1F">and WhatsApp</text>
+  <text x="2410" y="752" class="bs" font-weight="900" font-size="76" letter-spacing="1" fill="#1A1C1F" data-fit="460">rinamas.com</text>
+
+  <text x="1500" y="895" text-anchor="middle" class="mono" font-weight="500" font-size="36" letter-spacing="5" fill="#EDE6DA" data-fit="2780">EXCAVATORS · BACKHOES · DOZERS · WHEEL LOADERS · GRADERS · ROLLERS · TIPPERS · TELEHANDLERS · CRANES · PILING</text>
+</svg>
+
+<!-- ============ STICKER, WIDE: 600 x 200 mm trim, 3 mm bleed (606 x 206) ============ -->
+<svg id="sticker-wide" viewBox="0 0 606 206" width="606mm" height="206mm" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+  </defs>
+  <rect width="606" height="206" fill="#1A1C1F"/>
+  <g class="hz" data-x="0" data-y="0" data-w="34" data-h="140" data-p="22"></g>
+  <use href="#badge" transform="translate(46 22) scale(1.42)"/>
+  <text x="160" y="76" class="bs" font-weight="900" font-size="68" letter-spacing="1.5" fill="#FFCD11" data-fit="290">RINAMAS</text>
+  <text x="162" y="94" class="mono" font-weight="500" font-size="9.4" letter-spacing="1.7" fill="#EDE6DA" data-fit="290">EQUIPMENT &amp; TRADING ENTERPRISE</text>
+  <text x="162" y="115" class="bw" font-weight="600" font-size="10.5" fill="#A9A094" data-fit="290">Yard: Accra-Tema Motorway, Accra</text>
+  <text x="162" y="129" class="bw" font-weight="600" font-size="10.5" fill="#A9A094" data-fit="290">Office 024 927 6713 · Mon to Sat 08:00 to 18:00</text>
+  <rect x="482" y="16" width="104" height="104" rx="4" fill="#FFFFFF"/>
+  <g class="qr" data-url="https://rinamas.com/?utm_source=sticker" data-x="488" data-y="22" data-size="92"></g>
+  <text x="534" y="133" text-anchor="middle" class="mono" font-weight="600" font-size="7.6" letter-spacing="1.4" fill="#EDE6DA">SCAN TO HIRE</text>
+  <rect y="140" width="606" height="66" fill="url(#gh)"/>
+  <text x="40" y="179" class="bs" font-weight="900" font-size="34" letter-spacing="1" fill="#1A1C1F" data-fit="122">FOR HIRE</text>
+  <text x="41" y="193" class="mono" font-weight="600" font-size="7.4" letter-spacing="1.5" fill="#1A1C1F" data-fit="122">CALL OR WHATSAPP</text>
+  <text x="176" y="192" class="bs" font-weight="900" font-size="46" letter-spacing="1" fill="#1A1C1F" data-fit="275">024 351 8749</text>
+  <text x="586" y="186" text-anchor="end" class="bw" font-weight="700" font-size="20" fill="#1A1C1F" data-fit="130">rinamas.com</text>
+</svg>
+
+<!-- ============ STICKER, SQUARE: 300 x 300 mm trim, 3 mm bleed (306 x 306) ============ -->
+<svg id="sticker-square" viewBox="0 0 306 306" width="306mm" height="306mm" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+  </defs>
+  <rect width="306" height="306" fill="#1A1C1F"/>
+  <g class="hz" data-x="0" data-y="0" data-w="306" data-h="24" data-p="20"></g>
+  <use href="#badge" transform="translate(110 38) scale(1.19)"/>
+  <text x="153" y="164" text-anchor="middle" class="bs" font-weight="900" font-size="56" letter-spacing="1.5" fill="#FFCD11" data-fit="250">RINAMAS</text>
+  <text x="153" y="181" text-anchor="middle" class="mono" font-weight="500" font-size="7.8" letter-spacing="1.4" fill="#EDE6DA" data-fit="250">EQUIPMENT &amp; TRADING ENTERPRISE</text>
+  <rect y="196" width="306" height="110" fill="url(#gh)"/>
+  <text x="153" y="224" text-anchor="middle" class="bs" font-weight="900" font-size="22" letter-spacing="1.5" fill="#1A1C1F" data-fit="262">FOR HIRE · CALL OR WHATSAPP</text>
+  <text x="153" y="263" text-anchor="middle" class="bs" font-weight="900" font-size="46" letter-spacing="1" fill="#1A1C1F" data-fit="262">024 351 8749</text>
+  <text x="153" y="284" text-anchor="middle" class="bw" font-weight="700" font-size="11.5" fill="#1A1C1F" data-fit="262">rinamas.com · Accra-Tema Motorway, Accra</text>
+</svg>
+
+<script>
+  // Draw QR codes as vector squares.
+  function drawQr(g) {
+    const qr = qrcode(0, "M"); qr.addData(g.dataset.url); qr.make();
+    const n = qr.getModuleCount(), size = +g.dataset.size, cell = size / n, x0 = +g.dataset.x, y0 = +g.dataset.y;
+    let d = "";
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += `M${(x0 + c * cell).toFixed(3)} ${(y0 + r * cell).toFixed(3)}h${cell.toFixed(3)}v${cell.toFixed(3)}h-${cell.toFixed(3)}z`;
+    const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    p.setAttribute("d", d); p.setAttribute("fill", "#111214"); g.appendChild(p);
+  }
+  // Hazard stripes as plain 45° parallelograms clipped to their box (patterns get rasterised in PDFs).
+  let clipN = 0;
+  function stripes(g) {
+    const NS = "http://www.w3.org/2000/svg";
+    const x = +g.dataset.x, y = +g.dataset.y, w = +g.dataset.w, h = +g.dataset.h, p = +g.dataset.p, half = p / 2;
+    const clip = document.createElementNS(NS, "clipPath"); clip.id = "hzc" + ++clipN;
+    const r = document.createElementNS(NS, "rect"); r.setAttribute("x", x); r.setAttribute("y", y); r.setAttribute("width", w); r.setAttribute("height", h);
+    clip.appendChild(r); g.appendChild(clip);
+    const bg = r.cloneNode(); bg.setAttribute("fill", g.dataset.dark || "#111214"); g.appendChild(bg);
+    let d = "";
+    for (let s = x - h; s < x + w + p; s += p) d += `M${s} ${y + h}L${s + h} ${y}L${s + h + half} ${y}L${s + half} ${y + h}Z`;
+    const path = document.createElementNS(NS, "path");
+    path.setAttribute("d", d); path.setAttribute("fill", g.dataset.light || "#FFCD11"); path.setAttribute("clip-path", `url(#${clip.id})`);
+    g.appendChild(path);
+  }
+  // Shrink any text wider than its data-fit width (mm), so nothing ever runs into a neighbour.
+  function fit(t) {
+    const max = +t.dataset.fit, w = t.getComputedTextLength();
+    if (w > max) t.setAttribute("font-size", (parseFloat(t.getAttribute("font-size")) * max / w).toFixed(2));
+  }
+  window.ready = (async () => {
+    const which = location.hash.slice(1) || "banner";
+    document.getElementById(which).classList.add("on");
+    await document.fonts.ready;
+    document.querySelectorAll(".hz").forEach(stripes);
+    document.querySelectorAll(".qr").forEach(drawQr);
+    document.querySelectorAll(`#${which} [data-fit]`).forEach(fit);
+    return which;
+  })();
+</script>
+</body>
+</html>
