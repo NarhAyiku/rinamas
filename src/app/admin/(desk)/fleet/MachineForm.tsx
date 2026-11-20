@@ -54,7 +54,8 @@ async function downscale(file: File): Promise<Blob> {
   return blob;
 }
 
-export function MachineForm({ m }: { m?: MachineFormData }) {
+export function MachineForm({ m, canPrice = true }: { m?: MachineFormData; canPrice?: boolean }) {
+  const locked = !canPrice;
   const [state, action, pending] = useActionState(saveMachine, undefined);
   const [fileNote, setFileNote] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -84,11 +85,13 @@ export function MachineForm({ m }: { m?: MachineFormData }) {
     set("category", sg.category);
     set("categoryLabel", sg.categoryLabel);
     set("specs", sg.specs.map((s) => `${s.label}: ${s.value}`).join("\n"));
-    set("rateUnit", sg.rateUnit);
-    set("operatorRate", sg.operatorRate == null ? "" : String(sg.operatorRate));
-    set("fuelLPerDay", sg.fuelLPerDay == null ? "" : String(sg.fuelLPerDay));
-    const selfDrive = form.elements.namedItem("selfDrive") as HTMLInputElement | null;
-    if (selfDrive) { selfDrive.checked = sg.selfDrive; filled.add("selfDrive"); }
+    if (!locked) {
+      set("rateUnit", sg.rateUnit);
+      set("operatorRate", sg.operatorRate == null ? "" : String(sg.operatorRate));
+      set("fuelLPerDay", sg.fuelLPerDay == null ? "" : String(sg.fuelLPerDay));
+      const selfDrive = form.elements.namedItem("selfDrive") as HTMLInputElement | null;
+      if (selfDrive) { selfDrive.checked = sg.selfDrive; filled.add("selfDrive"); }
+    }
     // Never overwrite a rate someone already set; only fill an empty/0 rate on a new machine.
     const rate = form.elements.namedItem("dayRate") as HTMLInputElement | null;
     if (!m && rate && sg.dayRate != null && (rate.value.trim() === "" || Number(rate.value) === 0)) {
@@ -180,20 +183,21 @@ export function MachineForm({ m }: { m?: MachineFormData }) {
         <label className={ai$("categoryLabel")}>Category label{tag("categoryLabel")}<input name="categoryLabel" defaultValue={m?.categoryLabel} placeholder="Lifting · Telehandler" required /></label>
       </div>
       <div className="inline-form">
-        <label className={ai$("dayRate")}>Rate (GH₵){tag("dayRate")}<input name="dayRate" type="number" min={0} defaultValue={m?.dayRate ?? 0} required /></label>
-        <label className={ai$("rateUnit")}>Per{tag("rateUnit")}<select name="rateUnit" defaultValue={m?.rateUnit ?? "day"}><option value="day">day</option><option value="trip">trip</option></select></label>
-        <label className={ai$("operatorRate")}>Operator / day (blank = included){tag("operatorRate")}<input name="operatorRate" type="number" min={0} defaultValue={m?.operatorRate ?? ""} /></label>
-        <label className={ai$("fuelLPerDay")}>Diesel L / day (blank = metered){tag("fuelLPerDay")}<input name="fuelLPerDay" type="number" min={0} max={5000} defaultValue={m?.fuelLPerDay ?? ""} placeholder="e.g. 120" /></label>
+        <label className={ai$("dayRate")}>Rate (GH₵){tag("dayRate")}<input name="dayRate" type="number" min={0} defaultValue={m?.dayRate ?? 0} required disabled={locked} /></label>
+        <label className={ai$("rateUnit")}>Per{tag("rateUnit")}<select name="rateUnit" defaultValue={m?.rateUnit ?? "day"} disabled={locked}><option value="day">day</option><option value="trip">trip</option></select></label>
+        <label className={ai$("operatorRate")}>Operator / day (blank = included){tag("operatorRate")}<input name="operatorRate" type="number" min={0} defaultValue={m?.operatorRate ?? ""} disabled={locked} /></label>
+        <label className={ai$("fuelLPerDay")}>Diesel L / day (blank = metered){tag("fuelLPerDay")}<input name="fuelLPerDay" type="number" min={0} max={5000} defaultValue={m?.fuelLPerDay ?? ""} placeholder="e.g. 120" disabled={locked} /></label>
         <label className="f">Sort order<input name="sortOrder" type="number" defaultValue={m?.sortOrder ?? 99} /></label>
       </div>
+      {locked && <p className="hint lock-note" style={{ margin: 0 }}>Rate, operator, diesel, price on request and low bed settings are set by the super admin.</p>}
       {m && photoRow}
       <label className={ai$("specs")}>Specs, one per line as Label: value{tag("specs")}<textarea name="specs" defaultValue={m?.specsText ?? ""} rows={4} placeholder={"Lift capacity: 4 T\nLift height: 17 m\nBest for: Blockwork, roofing"} /></label>
       {state?.error && <p className="err" role="alert">{state.error}</p>}
       {state?.ok && <p className="ok" role="status">{state.ok}</p>}
       <div className="row-form">
         <label style={{ display: "flex", gap: ".4rem", alignItems: "center" }}><input type="checkbox" name="available" defaultChecked={m?.available ?? true} /> Available for hire</label>
-        <label style={{ display: "flex", gap: ".4rem", alignItems: "center" }}><input type="checkbox" name="priceOnRequest" defaultChecked={m?.priceOnRequest ?? false} /> Price on request (hide the rate)</label>
-        <label className={aiFields.has("selfDrive") ? "ai-check ai-filled" : undefined} style={{ display: "flex", gap: ".4rem", alignItems: "center" }} title="Tippers and the low bed drive to site: estimates skip the low bed transport line"><input type="checkbox" name="selfDrive" defaultChecked={m?.selfDrive ?? false} /> Drives itself to site (no low bed){tag("selfDrive")}</label>
+        <label style={{ display: "flex", gap: ".4rem", alignItems: "center" }}><input type="checkbox" name="priceOnRequest" defaultChecked={m?.priceOnRequest ?? false} disabled={locked} /> Price on request (hide the rate)</label>
+        <label className={aiFields.has("selfDrive") ? "ai-check ai-filled" : undefined} style={{ display: "flex", gap: ".4rem", alignItems: "center" }} title="Tippers and the low bed drive to site: estimates skip the low bed transport line"><input type="checkbox" name="selfDrive" defaultChecked={m?.selfDrive ?? false} disabled={locked} /> Drives itself to site (no low bed){tag("selfDrive")}</label>
         <button className="btn btn-accent btn-sm" type="submit" disabled={pending || reading}>{pending ? "Saving…" : reading ? "Reading photo…" : m ? "Save changes" : "Add machine"}</button>
       </div>
     </form>

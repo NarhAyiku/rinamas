@@ -21,7 +21,7 @@ export default async function FleetAdmin() {
   return (
     <>
       <div className="admin-top"><div><p className="eyebrow">Yard</p><h2>Fleet &amp; rates</h2></div></div>
-      <p className="lede" style={{ marginBottom: "1.4rem" }}>Changes here show on the public site immediately. Day rates are machine only for 8 hours; week and month prices are computed from the day rate. Upload a photo for each machine (JPG, PNG or WebP, under 5 MB); the old photo is replaced.</p>
+      <p className="lede" style={{ marginBottom: "1.4rem" }}>Changes here show on the public site immediately. Day rates are machine only for 8 hours; week and month prices are computed from the day rate. Upload a photo for each machine (JPG, PNG or WebP, under 5 MB); the old photo is replaced.{isSuper ? "" : " Rates and pricing settings are set by the super admin; you can update names, photos, specs and availability."}</p>
       <div style={{ display: "grid", gap: "1rem" }}>
         {machines.map((m) => (
           <details key={m.id} className="panel" style={{ padding: 0 }}>
@@ -34,7 +34,7 @@ export default async function FleetAdmin() {
               {m.hidden && <span className="pill pill-lost" title="Retired through Catalogue sync; not shown on the public site"><i aria-hidden="true" />Hidden</span>}
             </summary>
             <div style={{ padding: "0 1.4rem 1.4rem", display: "grid", gap: ".8rem" }}>
-              <MachineForm m={toForm(m)} />
+              <MachineForm m={toForm(m)} canPrice={isSuper} />
               <div className="row-form">
                 <form action={toggleAvailable}><input type="hidden" name="id" value={m.id} /><button className="btn btn-ghost btn-sm" type="submit">{m.available ? "Mark on hire" : "Mark available"}</button></form>
                 {isSuper && <form action={deleteMachine}><input type="hidden" name="id" value={m.id} /><button className="btn btn-ghost btn-sm" type="submit" style={{ color: "var(--danger)" }}>Delete</button></form>}
@@ -44,7 +44,7 @@ export default async function FleetAdmin() {
         ))}
       </div>
       <h3 style={{ margin: "2.4rem 0 1rem" }}>Add a machine</h3>
-      <MachineForm />
+      {isSuper ? <MachineForm /> : <p className="muted">Adding a machine sets its rate, so it is done by the super admin. Ask them to add it.</p>}
     </>
   );
 }

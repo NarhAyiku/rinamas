@@ -10,8 +10,10 @@ export const dynamic = "force-dynamic";
 export default async function AdminHome({ searchParams }: { searchParams: Promise<{ status?: string; q?: string; denied?: string; who?: string }> }) {
   const { status, q, denied, who: whoParam } = await searchParams;
   const session = await getSession();
-  const who = whoParam === "mine" || whoParam === "none" ? whoParam : null;
-  const whoWhere = who === "mine" ? { ownerId: session?.id ?? "-" } : who === "none" ? { ownerId: null } : {};
+  // who: "mine", "none" (not taken), or a staff id (from the Team page)
+  const person = whoParam && whoParam !== "mine" && whoParam !== "none" ? await prisma.staff.findUnique({ where: { id: whoParam }, select: { id: true, name: true } }) : null;
+  const who = whoParam === "mine" || whoParam === "none" ? whoParam : person && person.id !== session?.id ? person.id : person ? "mine" : null;
+  const whoWhere = who === "mine" ? { ownerId: session?.id ?? "-" } : who === "none" ? { ownerId: null } : who ? { ownerId: who } : {};
   const where = {
     ...whoWhere,
     ...(status && (ALL_STATUSES as readonly string[]).includes(status) ? { status } : {}),
@@ -64,6 +66,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
           <a role="tab" aria-selected={!who} href={href({ status, q })}>Everyone</a>
           <a role="tab" aria-selected={who === "mine"} href={href({ status, q, who: "mine" })} title="Open requests you are handling">Mine <em>{mineOpen}</em></a>
           <a role="tab" aria-selected={who === "none"} href={href({ status, q, who: "none" })} title="Open requests nobody has taken yet">Not taken <em>{freeOpen}</em></a>
+          {person && who === person.id && <a role="tab" aria-selected href={href({ status, q, who: person.id })}>{person.name}</a>}
         </div>
         <div className="segmented" role="tablist" aria-label="Filter by status">
           <a role="tab" aria-selected={!status} href={href({ q, who })}>All <em>{total}</em></a>
@@ -75,7 +78,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
 
       {quotes.length === 0 && (
         <div className="empty">
-          <b>No requests {who === "mine" ? "handled by you " : who === "none" ? "waiting to be taken " : ""}{status ? `marked ${STATUS_LABEL[status]}` : "yet"}{q ? ` matching “${q}”` : ""}.</b>
+          <b>No requests {who === "mine" ? "handled by you " : who === "none" ? "waiting to be taken " : person && who === person.id ? `handled by ${person.name} ` : ""}{status ? `marked ${STATUS_LABEL[status]}` : "yet"}{q ? ` matching “${q}”` : ""}.</b>
           <span>When a customer sends the quote form on the site, or a request through the Ask RINAMAS chat, it appears here with a reference number. You can also open a request directly if the customer calls with their reference.</span>
         </div>
       )}

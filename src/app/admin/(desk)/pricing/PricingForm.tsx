@@ -3,11 +3,12 @@ import { useActionState } from "react";
 import { savePricing } from "@/app/admin/actions";
 import type { Pricing } from "@/lib/settings";
 
-export function PricingForm({ pricing }: { pricing: Pricing }) {
+export function PricingForm({ pricing, canEdit }: { pricing: Pricing; canEdit: boolean }) {
   const [state, action, pending] = useActionState(savePricing, undefined);
   const today = new Date().toISOString().slice(0, 10);
   return (
-    <form action={action} className="panel" style={{ display: "grid", gap: "1rem", maxWidth: 860 }}>
+    <form action={action} className="panel" style={{ maxWidth: 860 }}>
+      <fieldset className="lockable" disabled={!canEdit}>
       <div className="radio" role="radiogroup" aria-label="How prices appear on the site">
         <span>On the site</span>
         <label><input type="radio" name="showPrices" value="true" defaultChecked={pricing.showPrices} /> Show indicative rates and the live estimate</label>
@@ -41,12 +42,15 @@ export function PricingForm({ pricing }: { pricing: Pricing }) {
       </div>
       <p className="hint" style={{ margin: 0 }}>Leave diesel blank and estimates say "diesel billed on metered litres". Keep VAT at 0 until RINAMAS is VAT registered.</p>
 
+      </fieldset>
       {state?.error && <p className="err" role="alert">{state.error}</p>}
       {state?.ok && <p className="ok" role="status">{state.ok}</p>}
-      <div className="row-form">
-        <button className="btn btn-accent btn-sm" type="submit" disabled={pending}>{pending ? "Saving…" : "Save pricing"}</button>
-        <span className="hint" style={{ margin: 0 }}>Changes show on the public site immediately.</span>
-      </div>
+      {canEdit && (
+        <div className="row-form" style={{ marginTop: "1rem" }}>
+          <button className="btn btn-accent btn-sm" type="submit" disabled={pending}>{pending ? "Saving…" : "Save pricing"}</button>
+          <span className="hint" style={{ margin: 0 }}>Changes show on the public site immediately.</span>
+        </div>
+      )}
     </form>
   );
 }

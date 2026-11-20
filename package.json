@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma db push && node prisma/backfill-payments.mjs && node prisma/backfill-notes.mjs && (test -z \"$SEED_ON_BUILD\" || node prisma/seed.mjs) && next build",
+    "build": "prisma generate && prisma db push && node prisma/backfill-payments.mjs && node prisma/backfill-notes.mjs && node prisma/backfill-owners.mjs && (test -z \"$SEED_ON_BUILD\" || node prisma/seed.mjs) && next build",
     "start": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",

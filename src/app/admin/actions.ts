@@ -294,9 +294,23 @@ export type MachineFormState = { error?: string; ok?: string } | undefined;
 
 export async function saveMachine(_prev: MachineFormState, fd: FormData): Promise<MachineFormState> {
   const s = await requireSession();
+  const isSuper = s.role === "superadmin";
+  const editId = str(fd, "id");
+  if (!isSuper && !editId) return { error: "Only the super admin can add a machine, because it needs a rate." };
   const photo = fd.get("photo");
   fd.delete("photo");
-  const raw = Object.fromEntries(fd.entries());
+  const raw: Record<string, FormDataEntryValue | undefined> = Object.fromEntries(fd.entries());
+  // What a customer pays (rate, unit, operator, diesel, price on request, self-drive) is the super admin's call:
+  // an admin's save keeps the stored values whatever the form sends.
+  if (!isSuper) {
+    const cur = await prisma.machine.findUnique({ where: { id: editId } });
+    if (!cur) return { error: "That machine no longer exists." };
+    raw.dayRate = String(cur.dayRate); raw.rateUnit = cur.rateUnit;
+    raw.operatorRate = cur.operatorRate == null ? "" : String(cur.operatorRate);
+    raw.fuelLPerDay = cur.fuelLPerDay == null ? "" : String(cur.fuelLPerDay);
+    raw.priceOnRequest = cur.priceOnRequest ? "on" : undefined;
+    raw.selfDrive = cur.selfDrive ? "on" : undefined;
+  }
   const specs = String(raw.specs ?? "").split("\n").map((l) => l.split(":")).filter((p) => p.length >= 2)
     .map(([k, ...v]) => [k.trim(), v.join(":").trim()]);
   const parsed = machineSchema.safeParse({ ...raw, specs: JSON.stringify(specs), available: raw.available === "on", priceOnRequest: raw.priceOnRequest === "on", fuelLPerDay: raw.fuelLPerDay ?? "", selfDrive: raw.selfDrive === "on" });
@@ -320,6 +334,8 @@ export async function saveMachine(_prev: MachineFormState, fd: FormData): Promis
       await prisma.machine.update({ where: { id }, data });
       const diffs: string[] = [];
       if (before && before.dayRate !== data.dayRate) diffs.push(`rate ${ghs(before.dayRate)} → ${ghs(data.dayRate)}`);
+      if (before && before.rateUnit !== data.rateUnit) diffs.push(`per ${before.rateUnit} → per ${data.rateUnit}`);
+      if (before && (before.operatorRate ?? null) !== data.operatorRate) diffs.push(`operator ${before.operatorRate != null ? ghs(before.operatorRate) : "included"} → ${data.operatorRate != null ? ghs(data.operatorRate) : "included"}/day`);
       if (before && before.name !== data.name) diffs.push(`renamed from "${before.name}"`);
       if (before && before.available !== data.available) diffs.push(data.available ? "marked available" : "marked on hire");
       if (before && before.priceOnRequest !== data.priceOnRequest) diffs.push(data.priceOnRequest ? "price hidden (on request)" : "price shown");
@@ -442,7 +458,7 @@ const RULE_LABEL: Record<string, string> = {
 };
 
 export async function savePricing(_prev: { error?: string; ok?: string } | undefined, fd: FormData) {
-  const s = await requireSession();
+  const s = await requireSuper();
   const showPrices = str(fd, "showPrices") === "true";
   const note = str(fd, "note").slice(0, 600);
   const reviewedAt = str(fd, "reviewedAt");
@@ -496,7 +512,7 @@ const zoneSchema = z.object({
 });
 
 export async function saveZone(_prev: ZoneFormState, fd: FormData): Promise<ZoneFormState> {
-  const s = await requireSession();
+  const s = await requireSuper();
   const parsed = zoneSchema.safeParse({
     id: str(fd, "id") || undefined, name: str(fd, "name").toUpperCase(), label: str(fd, "label"), towns: str(fd, "towns"),
     maxKm: str(fd, "maxKm"), lowBedEachWay: str(fd, "lowBedEachWay"), sortOrder: str(fd, "sortOrder") || "0",
@@ -535,7 +551,7 @@ export async function saveZone(_prev: ZoneFormState, fd: FormData): Promise<Zone
 }
 
 export async function setZoneActive(fd: FormData) {
-  const s = await requireSession();
+  const s = await requireSuper();
   const id = str(fd, "id");
   const active = str(fd, "active") === "1";
   const z = await prisma.zone.findUnique({ where: { id } });

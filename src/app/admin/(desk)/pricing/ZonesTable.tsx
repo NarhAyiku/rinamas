@@ -4,10 +4,11 @@ import { saveZone, seedDefaultZones, setZoneActive } from "@/app/admin/actions";
 
 export type ZoneRowData = { id: string; name: string; label: string; towns: string; maxKm: number; lowBedEachWay: number; sortOrder: number; active: boolean };
 
-function ZoneRow({ z }: { z?: ZoneRowData }) {
+function ZoneRow({ z, canEdit = true }: { z?: ZoneRowData; canEdit?: boolean }) {
   const [state, action, pending] = useActionState(saveZone, undefined);
   return (
-    <form action={action} className="zone-row">
+    <form action={action}>
+      <fieldset className="zone-row lockable" disabled={!canEdit}>
       {z && <input type="hidden" name="id" value={z.id} />}
       <label className="f">Zone<input name="name" defaultValue={z?.name ?? ""} maxLength={12} placeholder="D" required style={{ textTransform: "uppercase" }} /></label>
       <label className="f">Band<input name="label" defaultValue={z?.label ?? ""} placeholder="120 to 250 km" required /></label>
@@ -15,9 +16,10 @@ function ZoneRow({ z }: { z?: ZoneRowData }) {
       <label className="f">Up to km<input name="maxKm" type="number" min={1} max={2000} defaultValue={z?.maxKm ?? ""} required /></label>
       <label className="f">Low bed each way GH₵<input name="lowBedEachWay" type="number" min={0} step={10} defaultValue={z?.lowBedEachWay ?? ""} required /></label>
       <label className="f">Order<input name="sortOrder" type="number" defaultValue={z?.sortOrder ?? 0} /></label>
-      <div className="zone-actions"><button className="btn btn-accent btn-sm" type="submit" disabled={pending}>{pending ? "Saving…" : z ? "Save" : "Add zone"}</button></div>
+      {canEdit && <div className="zone-actions"><button className="btn btn-accent btn-sm" type="submit" disabled={pending}>{pending ? "Saving…" : z ? "Save" : "Add zone"}</button></div>}
       {state?.error && <p className="err zone-msg" role="alert">{state.error}</p>}
       {state?.ok && <p className="ok zone-msg" role="status">{state.ok}</p>}
+      </fieldset>
     </form>
   );
 }
@@ -38,18 +40,22 @@ export function ZonesTable({ zones, isSuper }: { zones: ZoneRowData[]; isSuper: 
             <b>Zone {z.name}</b>
             <span className="muted">{z.label} · up to {z.maxKm} km</span>
             <span className={`pill ${z.active ? "pill-confirmed" : "pill-closed"}`}><i aria-hidden="true" />{z.active ? "In use" : "Inactive"}</span>
-            <form action={setZoneActive} style={{ marginLeft: "auto" }}>
-              <input type="hidden" name="id" value={z.id} /><input type="hidden" name="active" value={z.active ? "0" : "1"} />
-              <button className="link" type="submit">{z.active ? "Deactivate" : "Reactivate"}</button>
-            </form>
+            {isSuper && (
+              <form action={setZoneActive} style={{ marginLeft: "auto" }}>
+                <input type="hidden" name="id" value={z.id} /><input type="hidden" name="active" value={z.active ? "0" : "1"} />
+                <button className="link" type="submit">{z.active ? "Deactivate" : "Reactivate"}</button>
+              </form>
+            )}
           </div>
-          <ZoneRow z={z} />
+          <ZoneRow z={z} canEdit={isSuper} />
         </div>
       ))}
-      <details className="zone-card" style={{ gap: 0 }}>
-        <summary style={{ cursor: "pointer", fontWeight: 600 }}>Add a zone</summary>
-        <div style={{ marginTop: ".8rem" }}><ZoneRow /></div>
-      </details>
+      {isSuper && (
+        <details className="zone-card" style={{ gap: 0 }}>
+          <summary style={{ cursor: "pointer", fontWeight: 600 }}>Add a zone</summary>
+          <div style={{ marginTop: ".8rem" }}><ZoneRow /></div>
+        </details>
+      )}
     </div>
   );
 }
