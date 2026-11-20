@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { bumpSessionVersion, clearSessionCookie, getSession, requireSession, requireSuper, setSessionCookie, type Session } from "@/lib/auth";
 import { whereFrom } from "@/lib/device";
 import { rateLimiter } from "@/lib/ratelimit";
+import { notifyHandover } from "@/lib/notify";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { logActivity } from "@/lib/activity";
 import { ALL_STATUSES, STATUS_LABEL, ghs } from "@/lib/format";
@@ -79,11 +80,13 @@ export async function setOwner(fd: FormData) {
   if (!q || (q.ownerId ?? "") === to) return;
   const next = to ? await prisma.staff.findUnique({ where: { id: to } }) : null;
   if (to && (!next || !next.active)) return;
-  await prisma.quoteRequest.update({ where: { id }, data: { ownerId: next?.id ?? null, ownedAt: next ? new Date() : null } });
+  const handed = !!next && next.id !== s.id;
+  await prisma.quoteRequest.update({ where: { id }, data: { ownerId: next?.id ?? null, ownedAt: next ? new Date() : null, handedByName: handed ? s.name : null } });
   const was = q.owner?.name;
+  const mail = handed ? await notifyHandover(id, s, next.id) : null;
   const summary = !next ? `${q.reference}: ${was ?? "nobody"} no longer handling it, now not taken`
     : next.id === s.id ? `${q.reference}: ${s.name} took it${was ? ` over from ${was}` : ""}`
-    : `${q.reference}: handed ${was ? `from ${was} ` : ""}to ${next.name}`;
+    : `${q.reference}: handed ${was ? `from ${was} ` : ""}to ${next.name}${mail?.sent ? "; emailed them" : mail ? ` (not emailed: ${mail.reason})` : ""}`;
   await logActivity(s, "quote.owner", summary, { type: "quote", id });
   revalidatePath("/admin"); revalidatePath(`/admin/requests/${id}`);
 }
@@ -387,8 +390,10 @@ export async function createStaff(_prev: { error?: string; ok?: string } | undef
   if (!/^[a-z0-9._-]{3,30}$/.test(username)) return { error: "Username: 3 to 30 lowercase letters, numbers, dots or dashes." };
   if (name.length < 2) return { error: "Enter the person's name." };
   if (password.length < 8) return { error: "Password must be at least 8 characters." };
+  const email = str(fd, "email").toLowerCase() || null;
+  if (email && !z.string().email().max(120).safeParse(email).success) return { error: "That email address doesn't look right." };
   if (await prisma.staff.findUnique({ where: { username } })) return { error: "That username is taken." };
-  const st = await prisma.staff.create({ data: { username, name, role, passwordHash: hashPassword(password) } });
+  const st = await prisma.staff.create({ data: { username, name, role, email, passwordHash: hashPassword(password) } });
   await logActivity(s, "staff.create", `Created ${role} account "${username}" for ${name}`, { type: "staff", id: st.id });
   revalidatePath("/admin/staff");
   return { ok: `Account "${username}" created.` };
@@ -426,6 +431,36 @@ export async function changeOwnPassword(_prev: { error?: string; ok?: string } |
   await setSessionCookie(s.id, me2.sessionVersion); // keep this device signed in; every other one is now signed out
   await logActivity(s, "staff.password", `${s.name} changed their own password; other devices signed out`, { type: "staff", id: s.id });
   return { ok: "Password changed. Any other phone or computer signed in as you has been signed out." };
+}
+
+/** Where my desk alerts go, and whether I get them. */
+export async function saveMyAlerts(_prev: { error?: string; ok?: string } | undefined, fd: FormData) {
+  const s = await requireSession();
+  const email = str(fd, "email").toLowerCase() || null;
+  const alerts = fd.get("alerts") === "on";
+  if (email && !z.string().email().max(120).safeParse(email).success) return { error: "That email address doesn't look right." };
+  const before = await prisma.staff.findUnique({ where: { id: s.id } });
+  if (!before) return { error: "Account not found." };
+  await prisma.staff.update({ where: { id: s.id }, data: { email, alerts } });
+  const diffs: string[] = [];
+  if ((before.email ?? null) !== email) diffs.push(email ? `alert email → ${email}` : "alert email removed");
+  if (before.alerts !== alerts) diffs.push(alerts ? "alerts turned on" : "alerts turned off");
+  if (diffs.length) await logActivity(s, "staff.alerts", `${s.name}: ${diffs.join(", ")}`, { type: "staff", id: s.id });
+  revalidatePath("/admin/account"); revalidatePath("/admin/staff");
+  return { ok: !email ? "Saved. Add an email to get alerts." : alerts ? "Saved. Alerts will go to " + email + "." : "Saved. Alerts are off." };
+}
+
+/** Super admin sets someone's alert email (for staff who won't do it themselves). */
+export async function setStaffEmail(_prev: { error?: string; ok?: string } | undefined, fd: FormData) {
+  const s = await requireSuper();
+  const id = str(fd, "id"), email = str(fd, "email").toLowerCase() || null;
+  if (email && !z.string().email().max(120).safeParse(email).success) return { error: "That email address doesn't look right." };
+  const before = await prisma.staff.findUnique({ where: { id } });
+  if (!before) return { error: "Account not found." };
+  await prisma.staff.update({ where: { id }, data: { email } });
+  await logActivity(s, "staff.alerts", `Alert email for "${before.username}": ${before.email ?? "none"} → ${email ?? "none"}`, { type: "staff", id });
+  revalidatePath("/admin/staff");
+  return { ok: email ? `Alerts for ${before.name} go to ${email}.` : `Removed ${before.name}'s alert email.` };
 }
 
 export async function signOutOtherDevices(_prev: { error?: string; ok?: string } | undefined, _fd: FormData) {

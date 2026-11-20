@@ -1,11 +1,12 @@
 "use client";
 import { useActionState } from "react";
-import { createStaff, resetStaffPassword } from "@/app/admin/actions";
+import { createStaff, resetStaffPassword, setStaffEmail } from "@/app/admin/actions";
 import { PasswordInput } from "@/components/PasswordInput";
 
-export function StaffForms({ staff }: { staff: { id: string; name: string; username: string }[] }) {
+export function StaffForms({ staff }: { staff: { id: string; name: string; username: string; email: string | null }[] }) {
   const [c, createAction, creating] = useActionState(createStaff, undefined);
   const [r, resetAction, resetting] = useActionState(resetStaffPassword, undefined);
+  const [e, emailAction, savingEmail] = useActionState(setStaffEmail, undefined);
   return (
     <div className="grid-2" style={{ marginTop: "1.4rem" }}>
       <form className="panel" action={createAction} style={{ display: "grid", gap: ".9rem" }}>
@@ -15,6 +16,7 @@ export function StaffForms({ staff }: { staff: { id: string; name: string; usern
           <label className="f">Username<input name="username" pattern="[a-z0-9._-]{3,30}" autoCapitalize="none" required /></label>
           <label className="f">Role<select name="role" defaultValue="admin"><option value="admin">Admin (front desk)</option><option value="superadmin">Super admin</option></select></label>
           <label className="f">Temporary password<PasswordInput name="password" minLength={8} autoComplete="new-password" required /></label>
+          <label className="f">Email for alerts (optional)<input name="email" type="email" autoComplete="off" /></label>
         </div>
         {c?.error && <p className="err" role="alert">{c.error}</p>}
         {c?.ok && <p className="ok" role="status">{c.ok}</p>}
@@ -29,6 +31,17 @@ export function StaffForms({ staff }: { staff: { id: string; name: string; usern
         {r?.error && <p className="err" role="alert">{r.error}</p>}
         {r?.ok && <p className="ok" role="status">{r.ok}</p>}
         <div><button className="btn btn-ghost btn-sm" type="submit" disabled={resetting}>{resetting ? "Saving…" : "Set password"}</button></div>
+      </form>
+      <form className="panel" action={emailAction} style={{ display: "grid", gap: ".9rem", alignContent: "start" }}>
+        <h3>Set an alert email</h3>
+        <p className="hint" style={{ margin: 0 }}>Each person can set their own under My account. Use this for anyone who hasn&apos;t.</p>
+        <div className="inline-form">
+          <label className="f">Account<select name="id" required>{staff.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.username}){s.email ? "" : ", no email"}</option>)}</select></label>
+          <label className="f">Email (blank removes it)<input name="email" type="email" autoComplete="off" /></label>
+        </div>
+        {e?.error && <p className="err" role="alert">{e.error}</p>}
+        {e?.ok && <p className="ok" role="status">{e.ok}</p>}
+        <div><button className="btn btn-ghost btn-sm" type="submit" disabled={savingEmail}>{savingEmail ? "Saving…" : "Save email"}</button></div>
       </form>
     </div>
   );

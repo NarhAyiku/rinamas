@@ -51,6 +51,8 @@ model QuoteRequest {
   ownerId     String?
   owner       Staff?   @relation("QuoteOwner", fields: [ownerId], references: [id])
   ownedAt     DateTime?
+  handedByName String?  // set when someone else handed it to the current handler; cleared when they take it themselves
+  waitAlertAt DateTime? // when staff were alerted that it had waited too long with nobody on it (once per request)
   deskNotes   QuoteNote[]
   source      String   @default("form") // form | chat: where the request came from (website form or the Ask RINAMAS chat)
 
@@ -148,6 +150,8 @@ model Staff {
   sessionVersion Int    @default(0)
   failedLogins Int      @default(0)   // wrong passwords in a row; 5 locks the account for 15 minutes
   lockedUntil  DateTime?
+  email        String?             // where desk alerts go (handovers, requests nobody has taken)
+  alerts       Boolean  @default(true)
   createdAt    DateTime @default(now())
   activities   ActivityLog[]
   handling     QuoteRequest[] @relation("QuoteOwner")

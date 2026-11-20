@@ -3,6 +3,8 @@ import { ALL_STATUSES, STATUS_LABEL, fmtDate, ghs, intl, waLink } from "@/lib/fo
 import { getSession } from "@/lib/auth";
 import { NoteByline, QuoteStatusForm, StatusPill } from "@/components/StatusBits";
 import { setOwner } from "@/app/admin/actions";
+import { after } from "next/server";
+import { WAIT_HOURS, alertWaiting, waitingWhere } from "@/lib/notify";
 import { balanceOf } from "@/lib/settle";
 
 export const dynamic = "force-dynamic";
@@ -29,10 +31,13 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
     prisma.quoteRequest.groupBy({ by: ["status"], where: whoWhere, _count: { _all: true } }),
   ]);
   const OPEN = ["new", "quoted", "confirmed", "on_hire"];
-  const [mineOpen, freeOpen] = await Promise.all([
+  const [mineOpen, freeOpen, waiting] = await Promise.all([
     session ? prisma.quoteRequest.count({ where: { ownerId: session.id, status: { in: OPEN } } }) : 0,
     prisma.quoteRequest.count({ where: { ownerId: null, status: { in: OPEN } } }),
+    prisma.quoteRequest.count({ where: waitingWhere() }),
   ]);
+  // a desk load is also a chance to send the waiting-request email (the scheduled check is the main one)
+  if (waiting) after(() => alertWaiting().catch((e) => console.error("alertWaiting", e)));
   const href = (p: { status?: string; q?: string; who?: string | null }) => {
     const u = new URLSearchParams();
     if (p.status) u.set("status", p.status); if (p.q) u.set("q", p.q); if (p.who) u.set("who", p.who);
@@ -44,6 +49,11 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
   return (
     <>
       {denied && <p className="banner warn">That page is for the super admin only.</p>}
+      {waiting > 0 && who !== "none" && (
+        <p className="banner warn" role="alert">
+          {waiting} request{waiting === 1 ? " has" : "s have"} waited over {WAIT_HOURS} hours with nobody on {waiting === 1 ? "it" : "them"}. The customer is waiting for a call. <a href="/admin?who=none">Take one now</a>
+        </p>
+      )}
       <div className="admin-top">
         <div><p className="eyebrow">Dispatch desk</p><h2>Quote requests</h2></div>
         <form className="search" action="/admin" method="get">
@@ -98,7 +108,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
                 <small>{fmtDate(qr.createdAt)}</small>
                 <StatusPill status={qr.status} />
                 {qr.owner ? (
-                  <span className={`owner-tag${qr.owner.id === session?.id ? " is-me" : ""}`}>{qr.owner.id === session?.id ? "You're handling" : `Handled by ${qr.owner.name}`}</span>
+                  <span className={`owner-tag${qr.owner.id === session?.id ? " is-me" : ""}`}>{qr.owner.id === session?.id ? (qr.handedByName ? `Handed to you by ${qr.handedByName}` : "You're handling") : `Handled by ${qr.owner.name}`}</span>
                 ) : (
                   <form action={setOwner} className="owner-take">
                     <input type="hidden" name="id" value={qr.id} /><input type="hidden" name="ownerId" value="me" />

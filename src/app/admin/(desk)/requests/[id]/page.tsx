@@ -69,7 +69,7 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
 
       <div className={`owner-bar${q.owner ? "" : " is-free"}`}>
         <p>
-          {q.owner ? <>{mine ? <b>You are handling this request</b> : <>Handled by <b>{q.owner.name}</b></>}{q.ownedAt && <span className="muted"> since {fmtDate(q.ownedAt)}</span>}</>
+          {q.owner ? <>{mine ? <b>You are handling this request</b> : <>Handled by <b>{q.owner.name}</b></>}{q.ownedAt && <span className="muted"> since {fmtDate(q.ownedAt)}</span>}{q.handedByName && <span className="muted">, handed over by {q.handedByName}</span>}</>
             : <><b>Not taken yet.</b> <span className="muted">The first person to work on it becomes its handler, or take it now.</span></>}
         </p>
         <div className="row-form">
